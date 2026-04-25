@@ -1,0 +1,55 @@
+/* --- GŁÓWNE OKNO --- */
+QWidget#mainContainer {
+    background-color: #1C1B1B;
+}
+
+/* --- NAVBAR --- */
+QWidget#navBar {
+    background-color: #000000;
+    border-bottom: 2px solid #313030;
+}
+
+QWidget#navBar QPushButton {
+    background-color: transparent;
+    color: #929090;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+QWidget#navBar QPushButton:hover {
+    background-color: #222222;
+    color: white;
+}
+
+QWidget#navBar QPushButton:checked {
+    color: #CCFF00;
+    border-bottom: 3px solid #CCFF00;
+}
+
+/* --- WIDOKI --- */
+QLabel#placeholderLabel {
+    font-size: 24px;
+    color: #aaaaaa;
+    font-weight: bold;
+}
+
+/* --- WIDOK TRENINGU (Kamery) --- */
+#trainingView {
+    background-color: #1a1a1a;
+}
+
+QLabel#cameraSlot {
+    background-color: #1C1B1B;
+    color: #ecf0f1;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px dashed #929090;
+    border-radius: 10px;
+}
+
+#cameraSlot:hover {
+    border-color: #929090;
+    background-color: #929090;
+}
