@@ -173,4 +173,6 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+#Finding camera
+find_cameras.py
 # End of https://www.toptal.com/developers/gitignore/api/python
