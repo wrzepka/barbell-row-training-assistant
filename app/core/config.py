@@ -1,14 +1,16 @@
 from pathlib import Path
 
-# Base paths
+# Ścieżki do folderów
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MODELS_DIR = BASE_DIR / "models"
 DATA_DIR = BASE_DIR / "data"
+UI_DIR = BASE_DIR / "app" / "ui"
 
-# Paths to the models
+# Ścieżki do lokalnych modeli
 VOSK_DIR = MODELS_DIR / "vosk"
 PIPER_DIR = MODELS_DIR / "piper"
 
-# Paths to the specified files
+# Ścieżki do plików
 PIPER_MODEL_FILE = PIPER_DIR / "pl_PL-darkman-medium"
 DB_PATH = DATA_DIR / "database.db"
+STYLE_QSS_FILE = UI_DIR / "style.qss"
