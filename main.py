@@ -16,7 +16,6 @@ def check_env():
 
     if not PIPER_DIR.exists() or not any(PIPER_DIR.iterdir()):
         print(f"Brak modelu Piper(TTS) w {PIPER_DIR}!")
-
     # Weryfikacja głównego pliku styli dla PySide6
     if not STYLE_QSS_FILE.exists():
         print(f"Brak pliku globalnych styli GUI w {UI_DIR}")
