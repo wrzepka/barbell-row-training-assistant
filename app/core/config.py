@@ -14,3 +14,7 @@ PIPER_DIR = MODELS_DIR / "piper"
 PIPER_MODEL_FILE = PIPER_DIR / "pl_PL-darkman-medium"
 DB_PATH = DATA_DIR / "database.db"
 STYLE_QSS_FILE = UI_DIR / "style.qss"
+
+# Ścieżki do audio
+TEMP_DIR = BASE_DIR / "temp"
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
