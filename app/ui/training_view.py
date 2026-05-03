@@ -5,7 +5,9 @@ from PySide6.QtGui import QImage, QPixmap
 from app.workers.camera_worker import CameraWorker
 from app.workers.pose_worker import PoseWorker
 
+#Kamerka internetowa
 LAPTOP_CAM_INDEX = 1
+#droidcam chwilowe rozwiazanie bo duzy delay
 DROIDCAM_INDEX   = "http://192.168.0.83:4747/video"
 
 
@@ -28,10 +30,16 @@ class TrainingView(QWidget):
         self._setup_layout()
 
     def _setup_view_settings(self):
+        """
+                Konfiguracja podstawowych parametrów widoku.
+        """
         self.setObjectName("trainingView")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def _create_widgets(self):
+        """
+           Tworzenie elementów interfejsu.
+        """
         self.title_label = QLabel("Ekran treningu")
         self.title_label.setObjectName("placeholderLabel")
         self.title_label.setAlignment(Qt.AlignCenter)
@@ -39,11 +47,13 @@ class TrainingView(QWidget):
         self.cam_laptop = QLabel("KAMERA 1\n(Laptop)")
         self.cam_laptop.setObjectName("cameraSlot")
         self.cam_laptop.setAlignment(Qt.AlignCenter)
+        # Zablokowanie rozszerzania — kamera zostaje w swoim miejscu
         self.cam_laptop.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
 
         self.cam_droid = QLabel("KAMERA 2\n(DroidCam)")
         self.cam_droid.setObjectName("cameraSlot")
         self.cam_droid.setAlignment(Qt.AlignCenter)
+        # Zablokowanie rozszerzania — kamera zostaje w swoim miejscu
         self.cam_droid.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
 
         self.stats_label = QLabel("Statystyki")
@@ -51,10 +61,14 @@ class TrainingView(QWidget):
         self.stats_label.setAlignment(Qt.AlignCenter)
 
     def _setup_layout(self):
+        """
+        Ustawienie rozmieszczenia kamer obok siebie.
+        """
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
+        # Układ dla kamer
         cameras_layout = QHBoxLayout()
         cameras_layout.setSpacing(15)
         cameras_layout.addWidget(self.cam_laptop)
