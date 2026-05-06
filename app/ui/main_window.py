@@ -5,11 +5,7 @@ from app.ui.training_view import TrainingView
 from app.ui.history_view import HistoryView
 from PySide6.QtCore import Qt
 
-#import stt i tts
-import piper
-from app.core.config import PIPER_MODEL_FILE
-from app.workers.stt_worker import STTWorker
-from app.workers.tts_worker import TTSWorker
+from app.core.voice_manager import VoiceManager
 
 
 class MainWindow(QMainWindow):
@@ -26,7 +22,7 @@ class MainWindow(QMainWindow):
         self._connect_signals()
 
         #start modeli
-        self._init_voice_assistants()
+        self._init_voice_manager()
 
     def _setup_window_settings(self):
         """
@@ -78,32 +74,14 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(index)
         self.navbar.set_active_tab(index)
 
-    def _init_voice_assistants(self):
+    def _init_voice_manager(self):
         """
-        Uruchamia instancje sztucznej inteligencji działające w tle.
+        Tworzy instancję menedżera i podpina nasłuch komend głosowych.
         """
-        try:
-            # Ładowanie modelu Piper (raz dla całej aplikacji)
-            model_path = f"{PIPER_MODEL_FILE}.onnx"
-            print(f"🔊 Ładowanie modelu TTS z: {model_path}")
+        self.voice_manager = VoiceManager(parent=self)
+        self.voice_manager.command_recognized.connect(self._handle_voice_commands)
 
-            voice = piper.PiperVoice.load(model_path)
-
-            # Przekazujemy załadowany model do TTSWorker
-            self.tts_worker = TTSWorker(voice)
-
-        except Exception as e:
-            print(f"❌ Błąd inicjalizacji TTS: {e}")
-            self.tts_worker = None
-
-        # Inicjalizacja STT
-        self.stt_worker = STTWorker()
-        self.stt_worker.text_recognized.connect(self._handle_voice_commands)
-        self.stt_worker.start()
-
-        # Powitanie, jeśli TTS działa
-        if self.tts_worker:
-            self.tts_worker.speak("System gotowy do działania.")
+        self.voice_manager.speak("System gotowy do działania.")
 
     def _handle_voice_commands(self, text: str):
         """
@@ -111,21 +89,24 @@ class MainWindow(QMainWindow):
         """
         print(f"[{text}]")
 
+        # Można uprościć kod tutaj bazując na sygnałach, które będą przechwtywane w VoiceManager
         # przykładowa logika reagowania na komendy
         if "trening" in text.lower():
             self.switch_page(1)  #przełącza na trening
-            self.tts_worker.speak("Przechodzę do treningu.")
+            self.voice_manager.speak("Przechodzę do treningu.")
 
         elif "historia" in text.lower() or "historie" in text.lower():
             self.switch_page(2)  #przełącza na historie
-            self.tts_worker.speak("Oto twoja historia treningów.")
+            self.voice_manager.speak("Oto twoja historia treningów.")
         elif "lobby" in text.lower() or "start" in text.lower():
             self.switch_page(0) #przełąccza na start
-            self.tts_worker.speak("Przechodzę na stronę startową")
+            self.voice_manager.speak("Przechodzę na stronę startową")
 
     def closeEvent(self, event):
         """
         Zapewnia bezpieczne wyłączenie procesów przy zamykaniu okna.
         """
-        self.stt_worker.stop()
+        if hasattr(self, 'voice_manager'):
+            self.voice_manager.stop_all()
+
         super().closeEvent(event)
