@@ -5,6 +5,7 @@ from PySide6.QtGui import QImage, QPixmap
 from app.workers.camera_worker import CameraWorker
 from app.workers.pose_worker import PoseWorker
 
+
 class PoseCameraWidget(QWidget):
     """
     Samodzielny komponent UI (Widget) odpowiedzialny za wyświetlanie obrazu z pojedynczej kamery
@@ -25,6 +26,8 @@ class PoseCameraWidget(QWidget):
 
         self._camera_worker: CameraWorker | None = None
         self._pose_worker: PoseWorker | None = None
+
+        self._dying_workers = []
 
         self._setup_ui(title_text)
 
@@ -65,6 +68,15 @@ class PoseCameraWidget(QWidget):
         )
         self.video_label.setPixmap(px)
 
+    def _clean_up_worker(self, worker):
+        """
+        Pomocnicza metoda sprzątająca. Odpala się automatycznie,
+        gdy CameraWorker zakończy swoją pętlę i wyemituje sygnał 'finished'.
+        """
+        if worker in self._dying_workers:
+            self._dying_workers.remove(worker)
+        worker.deleteLater()
+
     def start_camera(self):
         """
         Inicjuje i uruchamia wątki w tle odpowiedzialne za pobieranie obrazu i analizę AI.
@@ -84,17 +96,39 @@ class PoseCameraWidget(QWidget):
 
     def stop_camera(self):
         """
-        Bezpiecznie zatrzymuje działające wątki w tle i czyści pamięć.
-        Używa metody .wait() oraz .deleteLater(), aby zapobiec awariom (crash)
-        wynikającym z usunięcia wątku, który wciąż przetwarzał klatkę.
+        Asynchroniczne zatrzymywanie kamer.
+        Wyłącza kamery bez blokowania przełączania zakładek - odbywa się to poprzez _dying_workers:
+        worek z referenacjami obiektów do usunięcia.
         """
+
+        # Odłączamy połączenie sygnałów między workerami, aby nie były przesyłane kolejne klatki.
         if self._camera_worker:
-            self._camera_worker.stop()  # Daj sygnał do przerwania pętli
-            self._camera_worker.wait()  # Czekaj aż wątek się zatrzyma
-            self._camera_worker.deleteLater()  # Nakaż usunięcie obiektu
-            self._camera_worker = None  # Usuń referencje
+            try:
+                self._camera_worker.frame_ready.disconnect()
+            except Exception:
+                pass
 
         if self._pose_worker:
-            self._pose_worker.stop()  # Daj sygnał do przerwania analizy
-            self._pose_worker.deleteLater()  # Posprzątaj pamięć
-            self._pose_worker = None  # Wyczyść referencję
+            try:
+                self._pose_worker.frame_ready.disconnect()
+            except Exception:
+                pass
+
+        # Bezpieczne wyłączanie
+        if self._camera_worker:
+            cw = self._camera_worker
+            # Dodajemy camera workera do listy aby python nie usunął go z pamięci i spowodował crasha.
+            self._dying_workers.append(cw)
+            cw.stop()
+
+            cw.finished.connect(lambda w=cw: self._clean_up_worker(w)) # Wyczyść obiekt
+            self._camera_worker = None
+
+        if self._pose_worker:
+            pw = self._pose_worker
+
+            # Dodajemy pose workera do listy aby python nie usunął go z pamięci i spowodował crasha.
+            self._dying_workers.append(pw)
+            pw.stop()
+            pw.deleteLater()
+            self._pose_worker = None

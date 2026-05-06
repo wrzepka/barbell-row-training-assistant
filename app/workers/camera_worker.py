@@ -45,4 +45,5 @@ class CameraWorker(QThread):
 
     def stop(self):
         self.quit()
-        self.wait(3000)
+        # TODO: do wyrzucenia, powoduje lag przy zmianie zakładek.
+        # self.wait(3000)
