@@ -84,12 +84,17 @@ class PoseCameraWidget(QWidget):
 
     def stop_camera(self):
         """
-        Zatrzymuje wątki.
+        Bezpiecznie zatrzymuje działające wątki w tle i czyści pamięć.
+        Używa metody .wait() oraz .deleteLater(), aby zapobiec awariom (crash)
+        wynikającym z usunięcia wątku, który wciąż przetwarzał klatkę.
         """
         if self._camera_worker:
-            self._camera_worker.stop()
-            self._camera_worker = None
+            self._camera_worker.stop()  # Daj sygnał do przerwania pętli
+            self._camera_worker.wait()  # Czekaj aż wątek się zatrzyma
+            self._camera_worker.deleteLater()  # Nakaż usunięcie obiektu
+            self._camera_worker = None  # Usuń referencje
 
         if self._pose_worker:
-            self._pose_worker.stop()
-            self._pose_worker = None
+            self._pose_worker.stop()  # Daj sygnał do przerwania analizy
+            self._pose_worker.deleteLater()  # Posprzątaj pamięć
+            self._pose_worker = None  # Wyczyść referencję
