@@ -19,7 +19,7 @@ class LobbyView(QWidget):
         Konfiguracja podstawowych parametrów widoku.
         """
         self.setObjectName("lobbyView")
-        # Wymuszenie obsługi QSS
+        # Wymuszenie nadpisania tła okna przez styl QSS
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def _create_widgets(self):
