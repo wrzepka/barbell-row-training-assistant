@@ -7,7 +7,6 @@ from PySide6.QtCore import Qt, Signal, QTimer
 
 from app.core.voice_manager import VoiceManager
 
-
 class MainWindow(QMainWindow):
     """
     Główne okno aplikacji zarządzające nawigacją i wyświetlaniem poszczególnych modułów.
