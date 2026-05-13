@@ -1,3 +1,29 @@
+/* --- LOADING SCREEN --- */
+
+QWidget#loadingScreen {
+    background-color: #1C1B1B;
+    border: 2px solid #313030;
+}
+
+QLabel#loadingInfo {
+    font-size: 16px;
+    color: #929090;
+    font-weight: bold;
+}
+
+/* Stylizacja paska postępu */
+QProgressBar#loadingProgress {
+    background-color: #000000;
+    border: 1px solid #313030;
+    border-radius: 4px;
+}
+
+/* Stylizacja "biegającego" elementu w pasku (tzw. chunk) */
+QProgressBar#loadingProgress::chunk {
+    background-color: #CCFF00;
+    border-radius: 4px;
+}
+
 /* --- GŁÓWNE OKNO --- */
 QWidget#mainContainer {
     background-color: #1C1B1B;
