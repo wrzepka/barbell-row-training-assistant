@@ -127,7 +127,7 @@ class PoseWorker(QObject):
             rgb     = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
             results = self._pose.process(rgb)
 
-            if results.pose_landmarks:
+            if results.pose_landmarks:      #problem polegał na słowniku
                 _draw_pose(
                     bgr,
                     results.pose_landmarks.landmark,
