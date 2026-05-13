@@ -26,18 +26,12 @@ _CONN_STYLE = _mp_draw.DrawingSpec(color=(255, 255, 0), thickness=2)
 
 # Landmarki 0-10 to twarz (nos, oczy, uszy, usta) — pomijamy je
 _FACE_LANDMARKS = set(range(11))
-_INVISIBLE      = _mp_draw.DrawingSpec(color=(0, 0, 0), thickness=0, circle_radius=0)
 
+# Połączenia ciała (bez twarzy)
 _BODY_CONNECTIONS = frozenset(
     (a, b) for a, b in _mp_pose.POSE_CONNECTIONS
     if a not in _FACE_LANDMARKS and b not in _FACE_LANDMARKS
 )
-
-# Słownik styli: twarz niewidoczna, reszta normalna
-_LANDMARK_STYLE = {
-    i: (_INVISIBLE if i in _FACE_LANDMARKS else _POSE_STYLE)
-    for i in range(33)
-}
 
 
 def _qimage_to_bgr(img: QImage) -> np.ndarray:
@@ -51,6 +45,27 @@ def _bgr_to_qimage(bgr: np.ndarray) -> QImage:
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     h, w, ch = rgb.shape
     return QImage(rgb.data, w, h, w * ch, QImage.Format.Format_RGB888).copy()
+
+
+def _draw_pose(image: np.ndarray, landmarks, connections, landmark_style, connection_style):
+    """
+    Rysuje tylko podane połączenia i tylko landmarki z indeksów >= 11.
+    """
+    h, w, _ = image.shape
+    # Rysuj połączenia
+    for a, b in connections:
+        pt_a = (int(landmarks[a].x * w), int(landmarks[a].y * h))
+        pt_b = (int(landmarks[b].x * w), int(landmarks[b].y * h))
+        cv2.line(image, pt_a, pt_b, connection_style.color, connection_style.thickness)
+
+    # Rysuj landmarki tylko dla indeksów >= 11 (pomiń twarz)
+    for idx in range(11, 33):   # 11..32
+        cx = int(landmarks[idx].x * w)
+        cy = int(landmarks[idx].y * h)
+        cv2.circle(image, (cx, cy),
+                   radius=landmark_style.circle_radius,
+                   color=landmark_style.color,
+                   thickness=landmark_style.thickness)
 
 
 class PoseWorker(QObject):
@@ -113,12 +128,12 @@ class PoseWorker(QObject):
             results = self._pose.process(rgb)
 
             if results.pose_landmarks:
-                _mp_draw.draw_landmarks(
+                _draw_pose(
                     bgr,
-                    results.pose_landmarks,
+                    results.pose_landmarks.landmark,
                     _BODY_CONNECTIONS,
-                    landmark_drawing_spec=_LANDMARK_STYLE,
-                    connection_drawing_spec=_CONN_STYLE,
+                    _POSE_STYLE,
+                    _CONN_STYLE,
                 )
 
             self.frame_ready.emit(_bgr_to_qimage(bgr))
