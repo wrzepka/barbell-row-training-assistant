@@ -1,7 +1,6 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy, QStackedWidget
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout
+from PySide6.QtCore import Qt
 
-from app.const import ScreenModes
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
 from app.ui.skeleton_training_view import SkeletonTrainingView
