@@ -42,5 +42,5 @@ class BaseView(QWidget):
         super().showEvent(event)
         self.main_stack.setCurrentIndex(ScreenModes.SKELETON)
 
-        # Symulacja opóźnienia ładowania
+        # Symulacja opóźnienia ładowania - DO ZMIANY TODO: najlepiej używać sygnału
         QTimer.singleShot(1500, self.activate_real_ui)
