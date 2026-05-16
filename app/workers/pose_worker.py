@@ -52,14 +52,12 @@ def _draw_pose(image: np.ndarray, landmarks, connections, landmark_style, connec
     Rysuje tylko podane połączenia i tylko landmarki z indeksów >= 11.
     """
     h, w, _ = image.shape
-    # Rysuj połączenia
     for a, b in connections:
         pt_a = (int(landmarks[a].x * w), int(landmarks[a].y * h))
         pt_b = (int(landmarks[b].x * w), int(landmarks[b].y * h))
         cv2.line(image, pt_a, pt_b, connection_style.color, connection_style.thickness)
 
-    # Rysuj landmarki tylko dla indeksów >= 11 (pomiń twarz)
-    for idx in range(11, 33):   # 11..32
+    for idx in range(11, 33):
         cx = int(landmarks[idx].x * w)
         cy = int(landmarks[idx].y * h)
         cv2.circle(image, (cx, cy),
@@ -71,11 +69,18 @@ def _draw_pose(image: np.ndarray, landmarks, connections, landmark_style, connec
 class PoseWorker(QObject):
     """
     Przetwarza klatki z kamery przez MediaPipe Pose w osobnym wątku.
-    Kolejka ma rozmiar 1 — jeśli poprzednia klatka jeszcze się liczy,
-    nowa ją zastępuje (brak narastającego opóźnienia).
+
+    Sygnały
+    -------
+    frame_ready(QImage)
+        Klatka z narysowanym szkieletem — do wyświetlenia w UI.
+    landmarks_ready(list)
+        Surowe landmarki MediaPipe — do analizy techniki (AnalysisWorker).
+        Emitowane tylko gdy MediaPipe wykryje sylwetkę.
     """
 
-    frame_ready = Signal(QImage)
+    frame_ready     = Signal(QImage)
+    landmarks_ready = Signal(object)   # lista landmarks MediaPipe
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -96,7 +101,7 @@ class PoseWorker(QObject):
     def stop(self) -> None:
         self._running = False
         try:
-            self._queue.put_nowait(None)   # odblokuj wątek jeśli czeka
+            self._queue.put_nowait(None)
         except Exception:
             pass
         self._thread.join(timeout=2)
@@ -105,7 +110,7 @@ class PoseWorker(QObject):
     def submit(self, img: QImage) -> None:
         """Wrzuca klatkę do kolejki; jeśli jest pełna, stara klatka jest odrzucana."""
         try:
-            self._queue.get_nowait()       # usuń starą (drop)
+            self._queue.get_nowait()
         except Exception:
             pass
         try:
@@ -120,14 +125,14 @@ class PoseWorker(QObject):
             except Exception:
                 continue
 
-            if img is None:                # sygnał stopu
+            if img is None:
                 break
 
             bgr     = _qimage_to_bgr(img)
             rgb     = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
             results = self._pose.process(rgb)
 
-            if results.pose_landmarks:      #problem polegał na słowniku
+            if results.pose_landmarks:
                 _draw_pose(
                     bgr,
                     results.pose_landmarks.landmark,
@@ -135,5 +140,7 @@ class PoseWorker(QObject):
                     _POSE_STYLE,
                     _CONN_STYLE,
                 )
+                # Emituj landmarki do analizy techniki
+                self.landmarks_ready.emit(results.pose_landmarks.landmark)
 
             self.frame_ready.emit(_bgr_to_qimage(bgr))
