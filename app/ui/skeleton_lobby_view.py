@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 from app.ui.shimmer_block import ShimmerBlock
 
 class SkeletonLobbyView(QWidget):
