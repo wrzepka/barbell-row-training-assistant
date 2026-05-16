@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 from PySide6.QtCore import QObject, Signal
 
-from app.analysis.rep_counter  import RepCounter
-from app.analysis.form_analyzer import SideFormAnalyzer, FrontFormAnalyzer, FormError
+from app.engine.rep_counter import RepCounter
+from app.engine.form_analyzer import SideFormAnalyzer, FrontFormAnalyzer, FormError
 
 
 @dataclass

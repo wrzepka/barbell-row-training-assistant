@@ -1,11 +1,10 @@
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
-from PySide6.QtCore import Qt
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
 from app.ui.stats_widget import StatsWidget
 from app.ui.skeleton_training_view import SkeletonTrainingView
-from app.analysis.analysis_worker import AnalysisWorker
+from app.engine.analysis_worker import AnalysisWorker
 
 
 # TODO: ogarnąć sposób na dobre szukanie indeksów kamer

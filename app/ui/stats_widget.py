@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
 
-from app.analysis.analysis_worker import AnalysisResult
+from app.engine.analysis_worker import AnalysisResult
 
 
 class StatsWidget(QWidget):
