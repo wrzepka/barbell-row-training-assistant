@@ -18,6 +18,7 @@ from PySide6.QtGui import QPainter, QColor
 
 from app.ui.skeleton_history_view import SkeletonHistoryView
 from app.ui.base_view import BaseView
+from const import ScreenModes
 
 # TODO: Docelowo dane będą pobierane z bazy danych (np. SQLite, PostgreSQL).
 #       Poniższe MOCK_DATA służy tylko do testów wizualnych i zostanie zastąpione.
