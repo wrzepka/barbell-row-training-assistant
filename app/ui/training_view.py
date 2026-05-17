@@ -4,17 +4,18 @@ from PySide6.QtGui import QImage, QPixmap
 
 from app.workers.camera_worker import CameraWorker
 from app.workers.pose_worker import PoseWorker
+from app.engine.rowing_analyzer import RowingAnalysis
 
-#Kamerka internetowa
+# Kamerka internetowa
 LAPTOP_CAM_INDEX = 1
-#droidcam chwilowe rozwiazanie bo duzy delay
-DROIDCAM_INDEX   = "http://192.168.0.83:4747/video"
+# DroidCam – adres IP telefonu
+DROIDCAM_INDEX   = "http://192.168.0.82:4747/video"
 
 
 class TrainingView(QWidget):
     """
     Widok treningowy z podglądem z dwóch kamer i szkieletem MediaPipe.
-    Przetwarzanie pose odbywa się w tle (PoseWorker) — UI nie jest blokowane.
+    Kamera boczna (DroidCam) automatycznie sprawdza poprawność wiosłowania.
     """
 
     def __init__(self):
@@ -30,16 +31,10 @@ class TrainingView(QWidget):
         self._setup_layout()
 
     def _setup_view_settings(self):
-        """
-                Konfiguracja podstawowych parametrów widoku.
-        """
         self.setObjectName("trainingView")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def _create_widgets(self):
-        """
-           Tworzenie elementów interfejsu.
-        """
         self.title_label = QLabel("Ekran treningu")
         self.title_label.setObjectName("placeholderLabel")
         self.title_label.setAlignment(Qt.AlignCenter)
@@ -47,28 +42,24 @@ class TrainingView(QWidget):
         self.cam_laptop = QLabel("KAMERA 1\n(Laptop)")
         self.cam_laptop.setObjectName("cameraSlot")
         self.cam_laptop.setAlignment(Qt.AlignCenter)
-        # Zablokowanie rozszerzania — kamera zostaje w swoim miejscu
         self.cam_laptop.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
 
         self.cam_droid = QLabel("KAMERA 2\n(DroidCam)")
         self.cam_droid.setObjectName("cameraSlot")
         self.cam_droid.setAlignment(Qt.AlignCenter)
-        # Zablokowanie rozszerzania — kamera zostaje w swoim miejscu
         self.cam_droid.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
 
-        self.stats_label = QLabel("Statystyki")
+        # Label ze statusem analizy – wyświetla błędy lub "Forma prawidłowa ✓"
+        self.stats_label = QLabel("Oczekiwanie na analizę...")
         self.stats_label.setObjectName("placeholderLabel")
         self.stats_label.setAlignment(Qt.AlignCenter)
+        self.stats_label.setWordWrap(True)
 
     def _setup_layout(self):
-        """
-        Ustawienie rozmieszczenia kamer obok siebie.
-        """
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # Układ dla kamer
         cameras_layout = QHBoxLayout()
         cameras_layout.setSpacing(15)
         cameras_layout.addWidget(self.cam_laptop)
@@ -87,8 +78,24 @@ class TrainingView(QWidget):
         )
         label.setPixmap(px)
 
+    def _on_rowing_analysis(self, analysis: RowingAnalysis):
+        """
+        Odbiera wyniki analizy wiosłowania i aktualizuje stats_label.
+        Nakładka z kolorami jest już narysowana na klatce przez PoseWorker.
+        """
+        if not analysis.visible:
+            self.stats_label.setText("⚠️ Brak wykrycia sylwetki — ustaw się w kadrze.")
+            return
+
+        if analysis.all_ok:
+            self.stats_label.setText("✅ Forma prawidłowa — kontynuuj!")
+        else:
+            # Pokaż tylko pierwsze dwa problemy żeby nie zaśmiecać ekranu
+            issues = analysis.issues[:2]
+            self.stats_label.setText("\n".join(issues))
+
     def _start_cameras(self):
-        # --- kamera laptopa ---
+        # --- kamera laptopa (bez analizy) ---
         self._pose_laptop = PoseWorker()
         self._pose_laptop.frame_ready.connect(
             lambda img: self._show_frame(self.cam_laptop, img)
@@ -99,11 +106,17 @@ class TrainingView(QWidget):
         self._worker_laptop.frame_ready.connect(self._pose_laptop.submit)
         self._worker_laptop.start()
 
-        # --- DroidCam ---
+        # --- DroidCam (kamera boczna) z analizą wiosłowania ---
         self._pose_droid = PoseWorker()
         self._pose_droid.frame_ready.connect(
             lambda img: self._show_frame(self.cam_droid, img)
         )
+
+        # ↓↓↓ TO BYŁO BRAKUJĄCE — włącza analizator i podpina wyniki ↓↓↓
+        self._pose_droid.enable_rowing_check()
+        self._pose_droid.analysis_ready.connect(self._on_rowing_analysis)
+        # ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
         self._pose_droid.start()
 
         self._worker_droid = CameraWorker(DROIDCAM_INDEX)

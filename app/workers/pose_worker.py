@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from queue import Queue, Empty
+from queue import Queue
 from threading import Thread
 
 from PySide6.QtCore import QObject, Signal
@@ -24,7 +24,6 @@ except AttributeError:
 _POSE_STYLE = _mp_draw.DrawingSpec(color=(0, 255, 0),  thickness=2, circle_radius=3)
 _CONN_STYLE = _mp_draw.DrawingSpec(color=(255, 255, 0), thickness=2)
 
-# Landmarki 0-10 to twarz (nos, oczy, uszy, usta) — pomijamy je
 _FACE_LANDMARKS = set(range(11))
 _INVISIBLE      = _mp_draw.DrawingSpec(color=(0, 0, 0), thickness=0, circle_radius=0)
 
@@ -33,10 +32,21 @@ _BODY_CONNECTIONS = frozenset(
     if a not in _FACE_LANDMARKS and b not in _FACE_LANDMARKS
 )
 
-# Słownik styli: twarz niewidoczna, reszta normalna
 _LANDMARK_STYLE = {
     i: (_INVISIBLE if i in _FACE_LANDMARKS else _POSE_STYLE)
     for i in range(33)
+}
+
+# ---------------------------------------------------------------------------
+# Analizator wiosłowania
+# ---------------------------------------------------------------------------
+from app.engine.rowing_analyzer import RowingAnalyzer, RowingAnalysis
+
+# Kolory nakładki na obraz (BGR) dla każdego poziomu ważności
+_SEVERITY_COLOR = {
+    "ok":      (0,   200,  0),    # zielony
+    "warning": (0,   165, 255),   # pomarańczowy
+    "error":   (0,   0,   220),   # czerwony
 }
 
 
@@ -53,14 +63,45 @@ def _bgr_to_qimage(bgr: np.ndarray) -> QImage:
     return QImage(rgb.data, w, h, w * ch, QImage.Format.Format_RGB888).copy()
 
 
+def _draw_analysis_overlay(bgr: np.ndarray, analysis: RowingAnalysis) -> None:
+    """
+    Rysuje na klatce listę komunikatów z wyników analizy.
+    Każdy wiersz jest kolorowany według severity: zielony / pomarańczowy / czerwony.
+    Wywoływane tylko gdy analysis.visible == True.
+    """
+    if not analysis.visible:
+        return
+
+    x, y_start, line_h = 10, 30, 26
+    font     = cv2.FONT_HERSHEY_SIMPLEX
+    scale    = 0.62
+    bg_color = (30, 30, 30)
+
+    for i, check in enumerate(analysis.checks):
+        color = _SEVERITY_COLOR.get(check.severity, (200, 200, 200))
+        text  = check.message
+        y     = y_start + i * line_h
+
+        # ciemne tło pod tekstem dla czytelności
+        (tw, th), _ = cv2.getTextSize(text, font, scale, 1)
+        cv2.rectangle(bgr, (x - 2, y - th - 2), (x + tw + 2, y + 2), bg_color, -1)
+        cv2.putText(bgr, text, (x, y), font, scale, color, 1, cv2.LINE_AA)
+
+
 class PoseWorker(QObject):
     """
     Przetwarza klatki z kamery przez MediaPipe Pose w osobnym wątku.
-    Kolejka ma rozmiar 1 — jeśli poprzednia klatka jeszcze się liczy,
-    nowa ją zastępuje (brak narastającego opóźnienia).
+
+    Sygnały
+    -------
+    frame_ready     : QImage  – klatka z narysowanym szkieletem (i opcjonalną
+                                nakładką analizy wiosłowania)
+    analysis_ready  : object  – obiekt RowingAnalysis z wynikami sprawdzeń
+                                (emitowany tylko gdy rowing_check_enabled=True)
     """
 
-    frame_ready = Signal(QImage)
+    frame_ready    = Signal(QImage)
+    analysis_ready = Signal(object)   # RowingAnalysis
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -74,6 +115,26 @@ class PoseWorker(QObject):
         self._thread  = Thread(target=self._run, daemon=True)
         self._running = False
 
+        # --- analizator wiosłowania ---
+        self._rowing_analyzer      = RowingAnalyzer()
+        self._rowing_check_enabled = False   # włącz przez enable_rowing_check()
+
+    # -----------------------------------------------------------------------
+    # Sterowanie analizą wiosłowania
+    # -----------------------------------------------------------------------
+
+    def enable_rowing_check(self) -> None:
+        """Włącza sprawdzanie kątów wiosłowania i rysowanie nakładki."""
+        self._rowing_check_enabled = True
+
+    def disable_rowing_check(self) -> None:
+        """Wyłącza sprawdzanie kątów wiosłowania."""
+        self._rowing_check_enabled = False
+
+    # -----------------------------------------------------------------------
+    # Cykl życia wątku
+    # -----------------------------------------------------------------------
+
     def start(self) -> None:
         self._running = True
         self._thread.start()
@@ -81,7 +142,7 @@ class PoseWorker(QObject):
     def stop(self) -> None:
         self._running = False
         try:
-            self._queue.put_nowait(None)   # odblokuj wątek jeśli czeka
+            self._queue.put_nowait(None)
         except Exception:
             pass
         self._thread.join(timeout=2)
@@ -90,13 +151,17 @@ class PoseWorker(QObject):
     def submit(self, img: QImage) -> None:
         """Wrzuca klatkę do kolejki; jeśli jest pełna, stara klatka jest odrzucana."""
         try:
-            self._queue.get_nowait()       # usuń starą (drop)
+            self._queue.get_nowait()
         except Exception:
             pass
         try:
             self._queue.put_nowait(img)
         except Exception:
             pass
+
+    # -----------------------------------------------------------------------
+    # Główna pętla wątku
+    # -----------------------------------------------------------------------
 
     def _run(self) -> None:
         while self._running:
@@ -105,7 +170,7 @@ class PoseWorker(QObject):
             except Exception:
                 continue
 
-            if img is None:                # sygnał stopu
+            if img is None:
                 break
 
             bgr     = _qimage_to_bgr(img)
@@ -113,6 +178,7 @@ class PoseWorker(QObject):
             results = self._pose.process(rgb)
 
             if results.pose_landmarks:
+                # Rysuj szkielet
                 _mp_draw.draw_landmarks(
                     bgr,
                     results.pose_landmarks,
@@ -120,5 +186,13 @@ class PoseWorker(QObject):
                     landmark_drawing_spec=_LANDMARK_STYLE,
                     connection_drawing_spec=_CONN_STYLE,
                 )
+
+                # Analiza wiosłowania (tylko gdy włączona)
+                if self._rowing_check_enabled:
+                    analysis = self._rowing_analyzer.analyze(
+                        results.pose_landmarks.landmark
+                    )
+                    _draw_analysis_overlay(bgr, analysis)
+                    self.analysis_ready.emit(analysis)
 
             self.frame_ready.emit(_bgr_to_qimage(bgr))
