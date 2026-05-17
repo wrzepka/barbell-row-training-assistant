@@ -20,8 +20,7 @@ from app.const import ScreenModes
 from app.ui.skeleton_history_view import SkeletonHistoryView
 
 # TODO: Docelowo dane będą pobierane z bazy danych (np. SQLite, PostgreSQL).
-#       Poniższe MOCK_DATA służy tylko do testów wizualnych i zostanie zastąpione
-#       przez zapytanie do bazy w metodzie load_data_from_db().
+#       Poniższe MOCK_DATA służy tylko do testów wizualnych i zostanie zastąpione.
 MOCK_DATA = [
     {"date": "2024-05-15 14:30", "sets": 3, "reps": "12", "weight": "60kg", "duration": "18 min", "score": 95, "to_fix": ["Brak uwag"]},
     {"date": "2024-05-14 10:15", "sets": 4, "reps": "10", "weight": "60kg", "duration": "22 min", "score": 65,
@@ -57,6 +56,10 @@ class HistoryCard(QFrame):
         self.setCursor(Qt.PointingHandCursor)
         self.setProperty("expanded", "false")
 
+        self._setup_ui(data)
+
+    def _setup_ui(self, data):
+        """Buduje strukturę kafelka (nagłówek + rozwijane detale)."""
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(20, 15, 20, 15)
         self.main_layout.setSpacing(0)
@@ -113,6 +116,7 @@ class HistoryCard(QFrame):
         self.main_layout.addWidget(self.header_widget)
         self.main_layout.addWidget(self.details_widget)
 
+        # Animacja
         self.anim = QPropertyAnimation(self.details_widget, b"maximumHeight")
         self.anim.setDuration(350)
         self.anim.setEasingCurve(QEasingCurve.InOutCubic)
@@ -139,9 +143,9 @@ class PerformanceChart(QWidget):
     def __init__(self, data):
         super().__init__()
         self.data = data
-        self.setup_chart()
+        self._setup_chart()
 
-    def setup_chart(self):
+    def _setup_chart(self):
         series = QLineSeries()
         for i, record in enumerate(self.data):
             series.append(i, record["score"])
@@ -155,18 +159,20 @@ class PerformanceChart(QWidget):
         chart.setPlotAreaBackgroundBrush(QColor("#1e1e1e"))
         chart.setPlotAreaBackgroundVisible(True)
 
+        # Oś X z datami
         axis_x = QCategoryAxis()
         axis_x.setLabelsColor(QColor("#aaaaaa"))
         axis_x.setTitleText("Trening (od najstarszego)")
         axis_x.setTitleBrush(QColor("white"))
         for i, record in enumerate(self.data):
             if i % 2 == 0:
-                short_date = record["date"][5:10]
+                short_date = record["date"][5:10]  # MM-DD
                 axis_x.append(short_date, i)
-        axis_x.setRange(0, len(self.data)-1)
+        axis_x.setRange(0, len(self.data) - 1)
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
+        # Oś Y
         axis_y = QValueAxis()
         axis_y.setRange(0, 100)
         axis_y.setTitleText("Wynik (%)")
@@ -191,14 +197,15 @@ class PerformanceChart(QWidget):
 
 
 class StatsSummary(QWidget):
-    """Dolny blok statystyk ogólnych na podstawie wszystkich treningów."""
+    """Dolny blok statystyk ogólnych – style w globalnym QSS."""
 
     def __init__(self, data):
         super().__init__()
         self.data = data
-        self.setup_ui()
+        self.setObjectName("statsSummary")
+        self._setup_ui()
 
-    def setup_ui(self):
+    def _setup_ui(self):
         total_trainings = len(self.data)
         avg_score = sum(d["score"] for d in self.data) / total_trainings
         best_score = max(d["score"] for d in self.data)
@@ -229,24 +236,6 @@ class StatsSummary(QWidget):
             layout.addWidget(lbl)
 
         layout.addStretch()
-        self.setObjectName("statsSummary")
-        self.setStyleSheet("""
-            #statsSummary {
-                background-color: #2a2a2a;
-                border-radius: 8px;
-            }
-            #statsTitle {
-                font-size: 14px;
-                font-weight: bold;
-                color: #adff2f;
-                border-bottom: 1px solid #444;
-                padding-bottom: 5px;
-            }
-            #statsLine {
-                color: #cccccc;
-                font-size: 12px;
-            }
-        """)
 
 
 class HistoryView(QWidget):
@@ -257,91 +246,23 @@ class HistoryView(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setObjectName("historyView")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        self._setup_view_settings()
-        self._create_widgets()
         self._setup_stack()
+        self._create_widgets()
         self._setup_layout()
 
     # TODO: Docelowo dane będą pobierane z bazy (np. SQLAlchemy + SQLite).
-    #       Należy zastąpić MOCK_DATA wynikiem zapytania do bazy.
     def _load_real_data(self):
         """Zwraca rzeczywiste dane z bazy (na razie mock)."""
         return MOCK_DATA
 
-    def _setup_view_settings(self):
-        """
-        Konfiguracja podstawowych parametrów widoku.
-        """
-        self.setObjectName("historyView")
-        # Wymuszenie obsługi QSS
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
-        self.setStyleSheet("""
-            #historyView {
-                background-color: #1e1e1e;
-            }
-            #historyContentPage {
-                background-color: #1e1e1e;
-            }
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea > QWidget > QWidget {
-                background: transparent;
-            }
-            QWidget#historyContainer {
-                background-color: #1e1e1e;
-            }
-            QFrame#historyCard {
-                background-color: #2a2a2a;
-                border-radius: 8px;
-                border-left: 4px solid #444444;
-                margin-bottom: 2px;
-            }
-            QFrame#historyCard[expanded="true"] {
-                background-color: #333333;
-                border-left: 4px solid #adff2f;
-            }
-            QFrame#historyCard * {
-                border: none;
-                background: transparent;
-            }
-            #dateLabel { color: #888888; font-size: 11px; }
-            #exerciseName { color: white; font-size: 15px; font-weight: bold; }
-            #statsLabel { color: #bbbbbb; font-size: 13px; }
-            #scoreLabel { font-weight: bold; font-size: 17px; margin-left: 20px; }
-            .scoreHigh { color: #adff2f; }
-            .scoreLow { color: #ff6666; }
-            #arrowLabel { color: #666666; margin-left: 10px; font-size: 9px; }
-            #separator { background-color: #444444; max-height: 1px; margin-bottom: 10px; }
-            #fixTitle { color: #ff8888; font-size: 10px; font-weight: bold; }
-            #bulletLabel { color: #aaaaaa; font-size: 12px; margin-left: 5px; }
-            QScrollBar:vertical {
-                background: #1e1e1e;
-                width: 8px;
-                margin: 0px;
-            }
-            QScrollBar::handle:vertical {
-                background: #555555;
-                border-radius: 4px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #777777;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-        """)
-
     def _create_widgets(self):
+        """Tworzy wszystkie elementy interfejsu."""
         self.title_label = QLabel("HISTORIA TRENINGÓW")
         self.title_label.setAlignment(Qt.AlignCenter)
-        self.title_label.setStyleSheet(
-            "font-size: 22px; font-weight: bold; color: white; padding-bottom: 15px; border-bottom: 1px solid #333333;"
-        )
+        self.title_label.setObjectName("historyTitle")
 
         # Lewa kolumna – lista treningów
         self.scroll_area = QScrollArea()
@@ -390,12 +311,14 @@ class HistoryView(QWidget):
         self.main_content.setLayout(main_layout)
 
     def _setup_layout(self):
+        """Układa główną zawartość w stosie."""
         self.content_page.setObjectName("historyContentPage")
         layout = QVBoxLayout(self.content_page)
         layout.setContentsMargins(30, 25, 20, 25)
         layout.addWidget(self.main_content)
 
     def _setup_stack(self):
+        """Tworzy stos do przełączania między szkieletem a właściwym widokiem."""
         self.main_stack = QStackedWidget(self)
         self.skeleton_page = SkeletonHistoryView()
         self.content_page = QWidget()
