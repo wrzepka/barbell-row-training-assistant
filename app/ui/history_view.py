@@ -16,8 +16,8 @@ from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QCategoryAxis
 from PySide6.QtGui import QPainter, QColor
 
-from app.const import ScreenModes
 from app.ui.skeleton_history_view import SkeletonHistoryView
+from app.ui.base_view import BaseView
 
 # TODO: Docelowo dane będą pobierane z bazy danych (np. SQLite, PostgreSQL).
 #       Poniższe MOCK_DATA służy tylko do testów wizualnych i zostanie zastąpione.

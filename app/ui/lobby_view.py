@@ -1,30 +1,20 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QStackedWidget
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QVBoxLayout, QLabel
+from PySide6.QtCore import Qt
 
-from app.const import ScreenModes
+from app.ui.base_view import BaseView
 from app.ui.skeleton_lobby_view import SkeletonLobbyView
 
 
-class LobbyView(QWidget):
+class LobbyView(BaseView):
     """
     Klasa reprezentująca widok powitalny (Lobby) aplikacji.
     """
 
     def __init__(self):
-        super().__init__()
+        super().__init__(SkeletonLobbyView, "lobbyView")
 
-        self._setup_view_settings()
         self._create_widgets()
-        self._setup_stack()
         self._setup_layout()
-
-    def _setup_view_settings(self):
-        """
-        Konfiguracja podstawowych parametrów widoku.
-        """
-        self.setObjectName("lobbyView")
-        # Wymuszenie nadpisania tła okna przez styl QSS
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
     def _create_widgets(self):
         """
@@ -44,34 +34,3 @@ class LobbyView(QWidget):
         layout.addStretch()
 
         layout.setContentsMargins(10, 10, 10, 10)
-
-    # TODO: zrefaktoryzować do klasy bazowej: dwie metody powtarzają się
-    def _setup_stack(self):
-        """
-        Tworzy QStackedWidget i definiuje dwie strony: szkielet oraz właściwy interfejs.
-        """
-
-        self.main_stack = QStackedWidget(self)
-        self.skeleton_page = SkeletonLobbyView()
-        self.content_page = QWidget()
-
-        self.main_stack.addWidget(self.skeleton_page)  # Index 0
-        self.main_stack.addWidget(self.content_page)  # Index 1
-
-        master_layout = QVBoxLayout(self)
-        master_layout.setContentsMargins(0, 0, 0, 0)
-        master_layout.addWidget(self.main_stack)
-
-    def activate_real_ui(self):
-        """
-        Publiczna metoda do przełączenia widoku ze szkieletu na ten z realną zawartością.
-        """
-
-        self.main_stack.setCurrentIndex(ScreenModes.REAL)
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.main_stack.setCurrentIndex(ScreenModes.SKELETON)
-
-        # udawanie pobierania danych - sztuczny delay - do wyrzucenia w przyszłości (TODO)
-        QTimer.singleShot(1500, self.activate_real_ui)
