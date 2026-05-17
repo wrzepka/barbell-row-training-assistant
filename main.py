@@ -1,8 +1,17 @@
-from PySide6.QtWidgets import QApplication
+# Zawartość pliku: main.py
 import sys
+import os
+
+# Rozwiązanie problemu ze ścieżkami relatywnymi modułów
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from PySide6.QtWidgets import QApplication
 from app.core.config import VOSK_DIR, PIPER_DIR, STYLE_QSS_FILE, UI_DIR, LOADING_IMAGE
 from app.ui.loading_screen import LoadingScreen
 from app.ui.main_window import MainWindow
+
+# Importujemy zaktualizowany moduł bazy danych
+from db.database import create_database, add_training_entry, get_training_statistics
 
 
 def check_env():
@@ -21,7 +30,17 @@ def check_env():
     if not STYLE_QSS_FILE.exists():
         print(f"Brak pliku globalnych styli GUI w {UI_DIR}")
 
-    # TODO: Sprawdzanie bazy danych
+    # Inicjalizacja bazy danych w folderze db/
+    print("Inicjalizacja bazy danych...")
+    create_database()
+
+    # Jeśli baza danych jest świeża i pusta, wrzucamy kilka rekordów startowych do testu
+    if not get_training_statistics():
+        print("Baza danych jest pusta. Generowanie wpisów historycznych...")
+        add_training_entry(50.0, 10, 3, "18 min", 87, ["Brak uwag"])
+        add_training_entry(55.0, 10, 3, "19 min", 75, ["Prowadź łokcie bliżej ciała"])
+        add_training_entry(60.0, 10, 4, "22 min", 65, ["Wyprostuj plecy!", "Zwolnij ruch"])
+        add_training_entry(60.0, 12, 3, "18 min", 95, ["Brak uwag"])
 
 
 def main():
@@ -49,12 +68,10 @@ def main():
         loading_screen.close()
 
     # czekanie na emisje sygnału, reprezentujący koniec inicjacji modeli.
-    # wywołuje on_ready(), która wyłącza loading screen i pokazuje główne okno apki.
     window.initialization_complete.connect(on_ready)
 
     print("Aplikacja gotowa do działania!")
     sys.exit(app.exec())  # Event loop
-
 
 
 if __name__ == "__main__":
