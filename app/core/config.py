@@ -1,5 +1,11 @@
 from pathlib import Path
 
+# Wyznaczenie ścieżki projektu na podstawie lokalizacji config.py (app/core)
+CORE_DIR = Path(__file__).parent
+APP_DIR = CORE_DIR.parent
+
+# Centralna ścieżka do pliku bazy danych w folderze app/db/
+DB_PATH = APP_DIR / "db" / "training.db"
 # Ścieżki do folderów
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MODELS_DIR = BASE_DIR / "models"

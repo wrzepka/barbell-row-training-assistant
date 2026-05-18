@@ -1,10 +1,7 @@
-# Zawartość pliku: db/database.py
+# Zawartość pliku: app/db/database.py
 import sqlite3
 from datetime import datetime
-from pathlib import Path
-
-# Ścieżka wskazująca na plik training.db w tym samym folderze (db/)
-DB_PATH = Path(__file__).parent / "training.db"
+from app.core.config import DB_PATH  # Importujemy ścieżkę z pliku konfiguracyjnego
 
 
 def create_database():
@@ -12,7 +9,6 @@ def create_database():
     connection = sqlite3.connect(DB_PATH)
     cursor = connection.cursor()
 
-    # Tworzymy tabelę z pełnymi parametrami odpowiadającymi widokowi GUI
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS training_history (
@@ -36,10 +32,7 @@ def add_training_entry(weight, reps, sets, duration, score, to_fix_list):
     connection = sqlite3.connect(DB_PATH)
     cursor = connection.cursor()
 
-    # Formatujemy aktualny czas (np. 2026-05-17 18:30)
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-    # Zamieniamy listę uwag na jeden ciąg tekstowy połączony średnikami
     to_fix_string = ";".join(to_fix_list) if to_fix_list else "Brak uwag"
 
     cursor.execute(
@@ -54,7 +47,7 @@ def add_training_entry(weight, reps, sets, duration, score, to_fix_list):
 
 
 def get_training_statistics():
-    """Pobiera wszystkie rekordy posortowane od najnowszego treningu (dla listy i statystyk)."""
+    """Pobiera wszystkie rekordy posortowane od najnowszego treningu."""
     connection = sqlite3.connect(DB_PATH)
     cursor = connection.cursor()
 
@@ -68,10 +61,8 @@ def get_training_statistics():
     rows = cursor.fetchall()
     connection.close()
 
-    # Mapujemy surowe wiersze z bazy danych na listę słowników (zgodną z formatem MOCK_DATA)
     history_data = []
     for row in rows:
-        # Rozbijamy ciąg tekstowy z uwagami z powrotem na listę w Pythonie
         to_fix_list = row[6].split(";") if row[6] else ["Brak uwag"]
 
         history_data.append({
