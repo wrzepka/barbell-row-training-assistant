@@ -1,3 +1,4 @@
+# Zawartość pliku: history_view.py
 """
 Moduł widoku historii treningów.
 
@@ -5,12 +6,13 @@ Zawiera:
 - HistoryCard – rozwijany kafelek pojedynczego treningu,
 - PerformanceChart – wykres liniowy postępu wyników,
 - StatsSummary – blok statystyk ogólnych,
-- HistoryView – główny widget składający lewą listę i prawy panel.
+- HistoryView – główny widget składający lewą listę i prawy panel z formularzem SQLite.
 """
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QStackedWidget, QScrollArea, QFrame
+    QStackedWidget, QScrollArea, QFrame, QGroupBox,
+    QSpinBox, QDoubleSpinBox, QLineEdit, QPushButton
 )
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QCategoryAxis
@@ -18,28 +20,10 @@ from PySide6.QtGui import QPainter, QColor
 
 from app.ui.skeleton_history_view import SkeletonHistoryView
 from app.ui.base_view import BaseView
+from const import ScreenModes
 
-# TODO: Docelowo dane będą pobierane z bazy danych (np. SQLite, PostgreSQL).
-#       Poniższe MOCK_DATA służy tylko do testów wizualnych i zostanie zastąpione.
-MOCK_DATA = [
-    {"date": "2024-05-15 14:30", "sets": 3, "reps": "12", "weight": "60kg", "duration": "18 min", "score": 95, "to_fix": ["Brak uwag"]},
-    {"date": "2024-05-14 10:15", "sets": 4, "reps": "10", "weight": "60kg", "duration": "22 min", "score": 65,
-     "to_fix": ["Wyprostuj plecy!", "Zwolnij ruch"]},
-    {"date": "2024-05-12 18:00", "sets": 3, "reps": "12", "weight": "55kg", "duration": "20 min", "score": 88, "to_fix": ["Głowa w dół"]},
-    {"date": "2024-05-10 09:00", "sets": 4, "reps": "8", "weight": "50kg", "duration": "16 min", "score": 92, "to_fix": ["Brak uwag"]},
-    {"date": "2024-05-08 16:20", "sets": 3, "reps": "10", "weight": "55kg", "duration": "19 min", "score": 75,
-     "to_fix": ["Prowadź łokcie bliżej ciała"]},
-    {"date": "2024-05-06 12:45", "sets": 4, "reps": "12", "weight": "50kg", "duration": "21 min", "score": 81,
-     "to_fix": ["Kontroluj fazę negatywną"]},
-    {"date": "2024-05-04 19:30", "sets": 3, "reps": "10", "weight": "45kg", "duration": "17 min", "score": 98, "to_fix": ["Brak uwag"]},
-    {"date": "2024-05-02 08:15", "sets": 4, "reps": "15", "weight": "40kg", "duration": "25 min", "score": 60,
-     "to_fix": ["Zmniejsz ciężar", "Pilnuj lędźwi"]},
-    {"date": "2024-04-30 17:00", "sets": 3, "reps": "10", "weight": "50kg", "duration": "18 min", "score": 87, "to_fix": ["Brak uwag"]},
-    {"date": "2024-04-28 11:10", "sets": 4, "reps": "12", "weight": "50kg", "duration": "20 min", "score": 91, "to_fix": ["Brak uwag"]},
-]
-
-# Dane dla wykresu – od najstarszego do najnowszego (kolejność postępu)
-CHART_DATA = list(reversed(MOCK_DATA))
+# Importowanie zaktualizowanych funkcji z warstwy db
+from db.database import get_training_statistics, add_training_entry
 
 
 class HistoryCard(QFrame):
@@ -168,7 +152,10 @@ class PerformanceChart(QWidget):
             if i % 2 == 0:
                 short_date = record["date"][5:10]  # MM-DD
                 axis_x.append(short_date, i)
-        axis_x.setRange(0, len(self.data) - 1)
+        
+        # Zabezpieczenie na wypadek braku danych w bazie
+        max_range = len(self.data) - 1 if len(self.data) > 0 else 1
+        axis_x.setRange(0, max_range)
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
@@ -197,7 +184,7 @@ class PerformanceChart(QWidget):
 
 
 class StatsSummary(QWidget):
-    """Dolny blok statystyk ogólnych – style w globalnym QSS."""
+    """Dolny blok statystyk ogólnych."""
 
     def __init__(self, data):
         super().__init__()
@@ -207,12 +194,16 @@ class StatsSummary(QWidget):
 
     def _setup_ui(self):
         total_trainings = len(self.data)
-        avg_score = sum(d["score"] for d in self.data) / total_trainings
-        best_score = max(d["score"] for d in self.data)
-        worst_score = min(d["score"] for d in self.data)
-
-        all_notes = [note for d in self.data for note in d["to_fix"] if note != "Brak uwag"]
-        most_common_note = max(set(all_notes), key=all_notes.count) if all_notes else "Brak krytycznych uwag"
+        
+        if total_trainings > 0:
+            avg_score = sum(d["score"] for d in self.data) / total_trainings
+            best_score = max(d["score"] for d in self.data)
+            worst_score = min(d["score"] for d in self.data)
+            all_notes = [note for d in self.data for note in d["to_fix"] if note != "Brak uwag"]
+            most_common_note = max(set(all_notes), key=all_notes.count) if all_notes else "Brak krytycznych uwag"
+        else:
+            avg_score = best_score = worst_score = 0
+            most_common_note = "Brak danych"
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(15, 15, 15, 15)
@@ -241,7 +232,7 @@ class StatsSummary(QWidget):
 class HistoryView(QWidget):
     """
     Główny widok historii treningów.
-    Łączy listę kafelków (lewa kolumna) z panelem wykresu i statystyk (prawa kolumna).
+    Łączy dynamiczną listę kafelków z formularzem wprowadzania danych oraz wykresami i statystykami.
     """
 
     def __init__(self):
@@ -253,10 +244,9 @@ class HistoryView(QWidget):
         self._create_widgets()
         self._setup_layout()
 
-    # TODO: Docelowo dane będą pobierane z bazy (np. SQLAlchemy + SQLite).
     def _load_real_data(self):
-        """Zwraca rzeczywiste dane z bazy (na razie mock)."""
-        return MOCK_DATA
+        """Zwraca rzeczywiste dane z bazy SQLite."""
+        return get_training_statistics()
 
     def _create_widgets(self):
         """Tworzy wszystkie elementy interfejsu."""
@@ -264,7 +254,7 @@ class HistoryView(QWidget):
         self.title_label.setAlignment(Qt.AlignCenter)
         self.title_label.setObjectName("historyTitle")
 
-        # Lewa kolumna – lista treningów
+        # --- LEWA KOLUMNA: Obszar przewijania kafelków treningowych ---
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShape(QFrame.NoFrame)
@@ -276,39 +266,165 @@ class HistoryView(QWidget):
         self.container_layout.setContentsMargins(0, 15, 15, 0)
         self.container_layout.setSpacing(12)
 
-        # TODO: Zamiast MOCK_DATA – dane z bazy: for record in self._load_real_data():
-        for record in MOCK_DATA:
-            self.container_layout.addWidget(HistoryCard(record))
-
         self.scroll_area.setWidget(self.container)
 
-        # Prawa kolumna
+        # --- PRAWA KOLUMNA: Formularz dodawania wpisów + Wykres + Statystyki ---
         self.right_panel = QWidget()
-        right_layout = QVBoxLayout(self.right_panel)
-        right_layout.setContentsMargins(10, 0, 10, 0)
-        right_layout.setSpacing(15)
+        self.right_layout = QVBoxLayout(self.right_panel)
+        self.right_layout.setContentsMargins(10, 0, 10, 0)
+        self.right_layout.setSpacing(15)
 
-        self.chart_widget = PerformanceChart(CHART_DATA)
-        self.stats_widget = StatsSummary(MOCK_DATA)
+        # Tworzenie widgetu formularza dodawania nowego treningu
+        self._create_input_form()
 
-        right_layout.addWidget(self.chart_widget, stretch=2)
-        right_layout.addWidget(self.stats_widget, stretch=1)
+        # Placeholdery pod wykres i statystyki (zostaną uzupełnione w refresh_ui)
+        self.chart_widget = QWidget()
+        self.stats_widget = QWidget()
 
-        # Główny układ poziomy
+        # Budujemy kompletny widok ładując dane po raz pierwszy
+        self.refresh_ui()
+
+        # --- GŁÓWNY UKŁAD STRONY ---
         self.main_content = QWidget()
         main_layout = QVBoxLayout(self.main_content)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(15)
         main_layout.addWidget(self.title_label)
 
-        split_layout = QHBoxLayout()
-        split_layout.setContentsMargins(0, 0, 0, 0)
-        split_layout.setSpacing(20)
-        split_layout.addWidget(self.scroll_area, stretch=2)
-        split_layout.addWidget(self.right_panel, stretch=1)
+        self.split_layout = QHBoxLayout()
+        self.split_layout.setContentsMargins(0, 0, 0, 0)
+        self.split_layout.setSpacing(20)
+        self.split_layout.addWidget(self.scroll_area, stretch=2)
+        self.split_layout.addWidget(self.right_panel, stretch=1)
 
-        main_layout.addLayout(split_layout)
+        main_layout.addLayout(self.split_layout)
         self.main_content.setLayout(main_layout)
+
+    def _create_input_form(self):
+        """Konstruuje pola formularza służącego do zapisu nowych treningów przez użytkownika."""
+        self.form_group = QGroupBox("DODAJ NOWY TRENING")
+        self.form_group.setObjectName("historyFormGroup") # Można olować w pliku QSS
+        form_layout = QVBoxLayout(self.form_group)
+        form_layout.setSpacing(8)
+
+        # Pola liczbowe obok siebie (Ciężar, Powtórzenia, Serie)
+        row1_layout = QHBoxLayout()
+        
+        vbox_w = QVBoxLayout()
+        vbox_w.addWidget(QLabel("Ciężar (kg):"))
+        self.input_weight = QDoubleSpinBox()
+        self.input_weight.setRange(0.0, 300.0)
+        self.input_weight.setValue(60.0)
+        self.input_weight.setSingleStep(2.5)
+        vbox_w.addWidget(self.input_weight)
+        
+        vbox_r = QVBoxLayout()
+        vbox_r.addWidget(QLabel("Powtórzenia:"))
+        self.input_reps = QSpinBox()
+        self.input_reps.setRange(1, 50)
+        self.input_reps.setValue(10)
+        vbox_r.addWidget(self.input_reps)
+
+        vbox_s = QVBoxLayout()
+        vbox_s.addWidget(QLabel("Serie:"))
+        self.input_sets = QSpinBox()
+        self.input_sets.setRange(1, 20)
+        self.input_sets.setValue(3)
+        vbox_s.addWidget(self.input_sets)
+
+        row1_layout.addLayout(vbox_w)
+        row1_layout.addLayout(vbox_r)
+        row1_layout.addLayout(vbox_s)
+        form_layout.addLayout(row1_layout)
+
+        # Czas trwania, ocena procentowa oraz uwagi techniczne
+        row2_layout = QHBoxLayout()
+        
+        vbox_d = QVBoxLayout()
+        vbox_d.addWidget(QLabel("Czas (np. 20 min):"))
+        self.input_duration = QLineEdit("20 min")
+        vbox_d.addWidget(self.input_duration)
+
+        vbox_sc = QVBoxLayout()
+        vbox_sc.addWidget(QLabel("Ocena (%) :"))
+        self.input_score = QSpinBox()
+        self.input_score.setRange(0, 100)
+        self.input_score.setValue(90)
+        vbox_sc.addWidget(self.input_score)
+
+        row2_layout.addLayout(vbox_d)
+        row2_layout.addLayout(vbox_sc)
+        form_layout.addLayout(row2_layout)
+
+        form_layout.addWidget(QLabel("Uwagi (rozdzielaj średnikiem ';'):"))
+        self.input_to_fix = QLineEdit("Brak uwag")
+        form_layout.addWidget(self.input_to_fix)
+
+        self.btn_submit = QPushButton("Dodaj trening do historii")
+        self.btn_submit.setCursor(Qt.PointingHandCursor)
+        self.btn_submit.clicked.connect(self._handle_add_training)
+        form_layout.addWidget(self.btn_submit)
+
+        self.right_layout.addWidget(self.form_group)
+
+    def _handle_add_training(self):
+        """Obsługuje kliknięcie przycisku, wyciąga dane z GUI i zapisuje je w SQLite."""
+        weight = self.input_weight.value()
+        reps = self.input_reps.value()
+        sets = self.input_sets.value()
+        duration = self.input_duration.text().strip()
+        score = self.input_score.value()
+        
+        # Pobieramy wpisane uwagi techniczne i dzielimy na listę na podstawie średników
+        raw_notes = self.input_to_fix.text().strip()
+        to_fix_list = [note.strip() for note in raw_notes.split(";") if note.strip()]
+        if not to_fix_list:
+            to_fix_list = ["Brak uwag"]
+
+        # Zapis do bazy danych
+        add_training_entry(weight, reps, sets, duration, score, to_fix_list)
+
+        # Przywracamy domyślne wartości w formularzu
+        self.input_weight.setValue(60.0)
+        self.input_reps.setValue(10)
+        self.input_sets.setValue(3)
+        self.input_duration.setText("20 min")
+        self.input_score.setValue(90)
+        self.input_to_fix.setText("Brak uwag")
+
+        # Natychmiastowe odświeżenie interfejsu (lista, wykres i statystyki ulegną aktualizacji)
+        self.refresh_ui()
+
+    def refresh_ui(self):
+        """Czyści stare komponenty interfejsu, odpytuje bazę i rysuje cały widok na nowo."""
+        current_data = self._load_real_data()
+
+        # 1. Czyszczenie i ponowne renderowanie kafelków w lewej kolumnie
+        while self.container_layout.count():
+            child = self.container_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        for record in current_data:
+            self.container_layout.addWidget(HistoryCard(record))
+
+        # 2. Usuwanie starych i dodawanie nowych zaktualizowanych wykresów i podsumowań
+        if hasattr(self, 'chart_widget') and self.chart_widget:
+            self.right_layout.removeWidget(self.chart_widget)
+            self.chart_widget.deleteLater()
+        
+        if hasattr(self, 'stats_widget') and self.stats_widget:
+            self.right_layout.removeWidget(self.stats_widget)
+            self.stats_widget.deleteLater()
+
+        # Dane do wykresu idą chronologicznie (od najstarszego do najnowszego)
+        chart_data_sorted = list(reversed(current_data))
+        
+        self.chart_widget = PerformanceChart(chart_data_sorted)
+        self.stats_widget = StatsSummary(current_data)
+
+        self.right_layout.addWidget(self.chart_widget, stretch=2)
+        self.right_layout.addWidget(self.stats_widget, stretch=1)
 
     def _setup_layout(self):
         """Układa główną zawartość w stosie."""
@@ -337,4 +453,6 @@ class HistoryView(QWidget):
         """Po pojawieniu się widoku pokazuje najpierw szkielet, a po chwili właściwe dane."""
         super().showEvent(event)
         self.main_stack.setCurrentIndex(ScreenModes.SKELETON)
+        # Odświeżamy dane z bazy tuż przed wyświetleniem
+        self.refresh_ui()
         QTimer.singleShot(800, self.activate_real_ui)
