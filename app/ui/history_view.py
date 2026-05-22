@@ -11,15 +11,16 @@ Zawiera:
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QScrollArea, QFrame, QGroupBox,
+    QStackedWidget, QScrollArea, QFrame, QGroupBox,
     QSpinBox, QDoubleSpinBox, QLineEdit, QPushButton
 )
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QCategoryAxis
 from PySide6.QtGui import QPainter, QColor
 
 from app.ui.skeleton_history_view import SkeletonHistoryView
 from app.ui.base_view import BaseView
+from app.const import ScreenModes
 
 from app.db.database import get_training_statistics, add_training_entry
 
@@ -227,15 +228,18 @@ class StatsSummary(QWidget):
         layout.addStretch()
 
 
-class HistoryView(BaseView):
+class HistoryView(QWidget):
     """
     Główny widok historii treningów.
     Łączy dynamiczną listę kafelków z formularzem wprowadzania danych oraz wykresami i statystykami.
     """
 
     def __init__(self):
-        super().__init__(SkeletonHistoryView, "historyView")
+        super().__init__()
+        self.setObjectName("historyView")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
+        self._setup_stack()
         self._create_widgets()
         self._setup_layout()
 
@@ -427,3 +431,27 @@ class HistoryView(BaseView):
         layout = QVBoxLayout(self.content_page)
         layout.setContentsMargins(30, 25, 20, 25)
         layout.addWidget(self.main_content)
+
+    def _setup_stack(self):
+        """Tworzy stos do przełączania między szkieletem a właściwym widokiem."""
+        self.main_stack = QStackedWidget(self)
+        self.skeleton_page = SkeletonHistoryView()
+        self.content_page = QWidget()
+        self.main_stack.addWidget(self.skeleton_page)
+        self.main_stack.addWidget(self.content_page)
+
+        m_layout = QVBoxLayout(self)
+        m_layout.setContentsMargins(0, 0, 0, 0)
+        m_layout.addWidget(self.main_stack)
+
+    def activate_real_ui(self):
+        """Przełącza ze szkieletu (skeleton) na właściwy widok z danymi."""
+        self.main_stack.setCurrentIndex(ScreenModes.REAL)
+
+    def showEvent(self, event):
+        """Po pojawieniu się widoku pokazuje najpierw szkielet, a po chwili właściwe dane."""
+        super().showEvent(event)
+        self.main_stack.setCurrentIndex(ScreenModes.SKELETON)
+        # Odświeżamy dane z bazy tuż przed wyświetleniem
+        self.refresh_ui()
+        QTimer.singleShot(800, self.activate_real_ui)
