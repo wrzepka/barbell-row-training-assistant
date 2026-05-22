@@ -11,16 +11,15 @@ Zawiera:
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QStackedWidget, QScrollArea, QFrame, QGroupBox,
+    QScrollArea, QFrame, QGroupBox,
     QSpinBox, QDoubleSpinBox, QLineEdit, QPushButton
 )
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QValueAxis, QCategoryAxis
 from PySide6.QtGui import QPainter, QColor
 
 from app.ui.skeleton_history_view import SkeletonHistoryView
 from app.ui.base_view import BaseView
-from app.const import ScreenModes
 
 from app.db.database import get_training_statistics, add_training_entry
 
