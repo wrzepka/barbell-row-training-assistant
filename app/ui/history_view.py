@@ -20,10 +20,9 @@ from PySide6.QtGui import QPainter, QColor
 
 from app.ui.skeleton_history_view import SkeletonHistoryView
 from app.ui.base_view import BaseView
-from const import ScreenModes
+from app.const import ScreenModes
 
-# Importowanie zaktualizowanych funkcji z warstwy db
-from db.database import get_training_statistics, add_training_entry
+from app.db.database import get_training_statistics, add_training_entry
 
 
 class HistoryCard(QFrame):

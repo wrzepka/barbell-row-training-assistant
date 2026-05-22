@@ -1,6 +1,5 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QVBoxLayout, QSizePolicy
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtCore import QThread, Signal
+from PySide6.QtGui import QImage
 import cv2
 
 FRAME_INTERVAL_MS = 33

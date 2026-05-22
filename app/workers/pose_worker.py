@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from queue import Queue, Empty
+from queue import Queue
 from threading import Thread
 
 from PySide6.QtCore import QObject, Signal

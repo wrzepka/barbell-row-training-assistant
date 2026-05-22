@@ -1,17 +1,11 @@
-# Zawartość pliku: main.py
 import sys
-import os
-
-# Rozwiązanie problemu ze ścieżkami relatywnymi modułów
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from PySide6.QtWidgets import QApplication
 from app.core.config import VOSK_DIR, PIPER_DIR, STYLE_QSS_FILE, UI_DIR, LOADING_IMAGE
 from app.ui.loading_screen import LoadingScreen
 from app.ui.main_window import MainWindow
 
-# Importujemy zaktualizowany moduł bazy danych
-from db.database import create_database, add_training_entry, get_training_statistics
+from app.db.database import create_database, add_training_entry, get_training_statistics
 
 
 def check_env():

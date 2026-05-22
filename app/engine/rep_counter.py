@@ -11,13 +11,12 @@ Algorytm (kamera boczna lub przednia):
 """
 
 from enum import Enum, auto
-import numpy as np
 
 
 class Phase(Enum):
-    IDLE     = auto()   # oczekiwanie na start
-    PULLING  = auto()   # faza koncentryczna (nadgarstek idzie w górę)
-    LOWERING = auto()   # faza ekscentryczna (nadgarstek opada)
+    IDLE = auto()  # oczekiwanie na start
+    PULLING = auto()  # faza koncentryczna (nadgarstek idzie w górę)
+    LOWERING = auto()  # faza ekscentryczna (nadgarstek opada)
 
 
 class RepCounter:
@@ -35,18 +34,18 @@ class RepCounter:
     """
 
     # Indeksy landmarków MediaPipe Pose
-    _L_SHOULDER  = 11
-    _R_SHOULDER  = 12
-    _L_HIP       = 23
-    _R_HIP       = 24
-    _L_WRIST     = 15
-    _R_WRIST     = 16
+    _L_SHOULDER = 11
+    _R_SHOULDER = 12
+    _L_HIP = 23
+    _R_HIP = 24
+    _L_WRIST = 15
+    _R_WRIST = 16
 
     def __init__(self, pull_threshold: float = 0.35, return_threshold: float = 0.15):
-        self.pull_threshold   = pull_threshold
+        self.pull_threshold = pull_threshold
         self.return_threshold = return_threshold
 
-        self._reps  = 0
+        self._reps = 0
         self._phase = Phase.IDLE
 
     # ── publiczne API ─────────────────────────────────────────────────────────
@@ -60,7 +59,7 @@ class RepCounter:
         return self._phase
 
     def reset(self):
-        self._reps  = 0
+        self._reps = 0
         self._phase = Phase.IDLE
 
     def update(self, landmarks) -> bool:
@@ -90,8 +89,8 @@ class RepCounter:
             # Czekamy na powrót do pozycji startowej
             if ratio < self.return_threshold:
                 self._reps += 1
-                self._phase  = Phase.PULLING
-                new_rep      = True
+                self._phase = Phase.PULLING
+                new_rep = True
 
         return new_rep
 
@@ -110,8 +109,8 @@ class RepCounter:
 
             # Używamy prawej strony (dominująca dla wiosłowania — można sparametryzować)
             shoulder_y = l[self._R_SHOULDER].y
-            hip_y      = l[self._R_HIP].y
-            wrist_y    = l[self._R_WRIST].y
+            hip_y = l[self._R_HIP].y
+            wrist_y = l[self._R_WRIST].y
 
             dist = abs(hip_y - shoulder_y)
             if dist < 1e-6:
