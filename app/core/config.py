@@ -4,8 +4,6 @@ from pathlib import Path
 CORE_DIR = Path(__file__).parent
 APP_DIR = CORE_DIR.parent
 
-# Centralna ścieżka do pliku bazy danych w folderze app/db/
-DB_PATH = APP_DIR / "db" / "training.db"
 # Ścieżki do folderów
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 MODELS_DIR = BASE_DIR / "models"
@@ -19,7 +17,7 @@ PIPER_DIR = MODELS_DIR / "piper"
 
 # Ścieżki do plików
 PIPER_MODEL_FILE = PIPER_DIR / "pl_PL-darkman-medium"
-DB_PATH = DATA_DIR / "database.db"
+DB_PATH = APP_DIR / "db" / "training.db"
 STYLE_QSS_FILE = UI_DIR / "style.qss"
 LOADING_IMAGE = ASSETS_DIR / "loading_temp.png"
 

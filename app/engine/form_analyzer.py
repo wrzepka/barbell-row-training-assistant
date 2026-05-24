@@ -11,7 +11,7 @@ Błędy są wygładzane czasowo (N kolejnych klatek musi potwierdzić błąd),
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from collections import deque
 import math
 
