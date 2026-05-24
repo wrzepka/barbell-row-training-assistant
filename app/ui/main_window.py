@@ -1,4 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QStackedWidget
+
+from app.core.config import LOGO_WITHOUT_BG
 from app.ui.navbar import Navbar
 from app.ui.lobby_view import LobbyView
 from app.ui.training_view import TrainingView
@@ -43,7 +45,7 @@ class MainWindow(QMainWindow):
         """
         Instancjonuje główne komponenty interfejsu.
         """
-        self.navbar = Navbar()
+        self.navbar = Navbar(LOGO_WITHOUT_BG)
 
         # Menadżer ekranów i dodawanie widoków
         self.stacked_widget = QStackedWidget()
