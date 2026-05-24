@@ -1,3 +1,4 @@
+import ctypes
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -41,6 +42,11 @@ def main():
     print("==-URUCHAMIANIE-==")
 
     check_env()
+
+    # Umożliwienie wyświetlania loga w pasku zadań w Windows
+    if sys.platform == "win32":
+        my_app_id = "pl.kck.barbellrowassistant.v0.4"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
 
     # Inicjalizacja PySide6
     app = QApplication(sys.argv)
