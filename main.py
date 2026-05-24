@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtWidgets import QApplication
-from app.core.config import VOSK_DIR, PIPER_DIR, STYLE_QSS_FILE, UI_DIR, LOADING_IMAGE
+from app.core.config import VOSK_DIR, PIPER_DIR, STYLE_QSS_FILE, UI_DIR, LOGO_WITHOUT_BG
 from app.ui.loading_screen import LoadingScreen
 from app.ui.main_window import MainWindow
 
@@ -51,7 +51,7 @@ def main():
         app.setStyleSheet(style_file.read())
 
     # uruchomienie loading screenu
-    loading_screen = LoadingScreen(LOADING_IMAGE)
+    loading_screen = LoadingScreen(LOGO_WITHOUT_BG)
     loading_screen.show()
 
     print("Ładowanie GUI")
