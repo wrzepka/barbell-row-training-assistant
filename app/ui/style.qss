@@ -1,4 +1,6 @@
-/* --- LOADING SCREEN --- */
+/* ============================================ */
+/*                 LOADING SCREEN               */
+/* ============================================ */
 
 QWidget#loadingScreen {
     background-color: #1C1B1B;
@@ -11,25 +13,29 @@ QLabel#loadingInfo {
     font-weight: bold;
 }
 
-/* Stylizacja paska postępu */
 QProgressBar#loadingProgress {
     background-color: #000000;
     border: 1px solid #313030;
     border-radius: 4px;
 }
 
-/* Stylizacja "biegającego" elementu w pasku (tzw. chunk) */
 QProgressBar#loadingProgress::chunk {
     background-color: #CCFF00;
     border-radius: 4px;
 }
 
-/* --- GŁÓWNE OKNO --- */
+/* ============================================ */
+/*                 MAIN WINDOW                  */
+/* ============================================ */
+
 QWidget#mainContainer {
     background-color: #1C1B1B;
 }
 
-/* --- NAVBAR --- */
+/* ============================================ */
+/*                    NAVBAR                    */
+/* ============================================ */
+
 QWidget#navBar {
     background-color: #000000;
     border-bottom: 2px solid #313030;
@@ -54,14 +60,20 @@ QWidget#navBar QPushButton:checked {
     border-bottom: 3px solid #CCFF00;
 }
 
-/* --- WIDOKI --- */
+/* ============================================ */
+/*                  WIDOKI OGÓLNE               */
+/* ============================================ */
+
 QLabel#placeholderLabel {
     font-size: 24px;
     color: #aaaaaa;
     font-weight: bold;
 }
 
-/* --- WIDOK TRENINGU (Kamery) --- */
+/* ============================================ */
+/*                 WIDOK TRENINGU               */
+/* ============================================ */
+
 #trainingView {
     background-color: #1a1a1a;
 }
@@ -80,9 +92,9 @@ QLabel#cameraSlot {
     background-color: #929090;
 }
 
-/* ======================== */
-/* --- WIDOK HISTORII (HistoryView) – styl identyczny jak w history_view_stare.txt --- */
-/* ======================== */
+/* ============================================ */
+/*                  WIDOK HISTORII              */
+/* ============================================ */
 
 #historyView {
     background-color: #1e1e1e;
@@ -176,7 +188,7 @@ QFrame#historyCard * {
     margin-left: 5px;
 }
 
-/* Scrollbar – taki sam jak w starym pliku (dotyczy całej aplikacji lub tylko historii) */
+/* Scrollbar */
 QScrollBar:vertical {
     background: #1e1e1e;
     width: 8px;
@@ -197,7 +209,6 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
 
-/* Styl dla tytułu "HISTORIA TRENINGÓW" – w nowym kodzie ma objectName "historyTitle" */
 #historyTitle {
     font-size: 22px;
     font-weight: bold;
@@ -206,7 +217,6 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     border-bottom: 1px solid #333333;
 }
 
-/* Styl dla bloku statystyk – przeniesiony z kodu StatsSummary w starym pliku */
 #statsSummary {
     background-color: #2a2a2a;
     border-radius: 8px;
@@ -223,4 +233,181 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 #statsLine {
     color: #cccccc;
     font-size: 12px;
+}
+
+/* ============================================ */
+/*               WIDOK LOBBY (STRONA STARTOWA)  */
+/* ============================================ */
+
+#lobbyView {
+    background-color: #0f0f0f;
+}
+
+#lobbyContentPage {
+    background-color: #0f0f0f;
+}
+
+#lobbyTitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: #CCFF00;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 8px rgba(204, 255, 0, 0.3);
+}
+
+/* Lewy panel – glassmorphism */
+#lobbyLeftPanel {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                stop:0 rgba(30,30,35,0.95),
+                                stop:1 rgba(20,20,25,0.98));
+    border-radius: 20px;
+    border: 1px solid rgba(204, 255, 0, 0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+#systemStatus {
+    font-size: 11px;
+    color: #CCFF00;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background-color: rgba(204, 255, 0, 0.1);
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    width: fit-content;
+}
+
+#readyLabel {
+    font-size: 26px;
+    font-weight: bold;
+    color: white;
+    margin-top: 5px;
+    line-height: 1.2;
+}
+
+#programDesc {
+    font-size: 13px;
+    color: #b0b0b0;
+    line-height: 1.5;
+    margin-top: 0px;
+}
+
+#motivationLabel {
+    font-size: 13px;
+    color: #CCFF00;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* Prawy panel – wspólne tło */
+#lobbyRightPanel {
+    background-color: transparent;
+}
+
+/* Widget tygodniowy */
+#weeklyWidget {
+    background-color: rgba(30,30,35,0.85);
+    border-radius: 20px;
+    padding: 12px;
+    border: 1px solid rgba(204, 255, 0, 0.15);
+    backdrop-filter: blur(4px);
+}
+
+#weeklyHeader {
+    font-size: 15px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 2px;
+}
+
+#weeklyPercent {
+    font-size: 12px;
+    color: #CCFF00;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+/* Wykres wewnątrz – rozciąganie bez sztywnych limitów */
+QChartView {
+    background: transparent;
+    min-height: 240px;
+}
+
+QChart {
+    background: transparent;
+}
+
+QBarCategoryAxis QLabel {
+    color: white;
+}
+
+QValueAxis QLabel {
+    color: #cccccc;
+}
+
+/* Ostatnia sesja */
+#lastSessionWidget {
+    background-color: rgba(30,30,35,0.85);
+    border-radius: 20px;
+    padding: 12px;
+    border: 1px solid rgba(204, 255, 0, 0.15);
+}
+
+#sessionTitle {
+    font-size: 15px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 6px;
+}
+
+#sessionName {
+    font-size: 20px;
+    font-weight: bold;
+    color: #CCFF00;
+}
+
+#sessionDetail {
+    font-size: 12px;
+    color: #cccccc;
+    margin-bottom: 12px;
+}
+
+#statBox {
+    background-color: #1a1a1a;
+    border-radius: 16px;
+    padding: 8px;
+    border: 1px solid #2c2c2c;
+}
+
+#statTitle {
+    font-size: 10px;
+    color: #aaaaaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#statValue {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+#viewDetailsButton {
+    background-color: transparent;
+    color: #CCFF00;
+    border: 1px solid #CCFF00;
+    border-radius: 30px;
+    padding: 6px 0;
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 8px;
+    transition: all 0.2s;
+}
+
+#viewDetailsButton:hover {
+    background-color: #CCFF00;
+    color: black;
 }
