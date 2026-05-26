@@ -65,7 +65,7 @@ class LobbyView(BaseView):
             "Wiosłowanie sztangą to ćwiczenie na plecy (głównie najszerszy grzbietu i środek pleców).\n"
             "Jak robić:\n"
             "\t1. Łapiesz sztangę, pochylasz prosty tułów w przód (kolana lekko ugięte).\n"
-            "\t2.Przyciągasz sztangę do brzucha, prowadząc\nłokcie blisko ciała i mocno ściągając łopatki.\n"
+            "\t2.Przyciągasz sztangę do brzucha, prowadząc łokcie blisko ciała i mocno ściągając łopatki.\n"
             "\t3.Kontrolowanie opuszczasz.\n"
             "Ważne: Plecy muszą być przez cały czas idealnie proste – zero kociego grzbietu."
         )
