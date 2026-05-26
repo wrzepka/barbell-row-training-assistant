@@ -1,10 +1,13 @@
+from PySide6.QtMultimedia import QMediaPlayer
+from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QWidget, QFrame, QSizePolicy
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis, QValueAxis
 from PySide6.QtGui import QColor, QPainter, QFont
 
+from app.core.config import EXAMPLE_VIDEO
 from app.ui.base_view import BaseView
 from app.ui.skeleton_lobby_view import SkeletonLobbyView
 
@@ -64,12 +67,13 @@ class LobbyView(BaseView):
             "\t1. Łapiesz sztangę, pochylasz prosty tułów w przód (kolana lekko ugięte).\n"
             "\t2.Przyciągasz sztangę do brzucha, prowadząc\nłokcie blisko ciała i mocno ściągając łopatki.\n"
             "\t3.Kontrolowanie opuszczasz.\n"
-            "Ważne: Plecy muszą być przez cały czas idealnie proste – zero kociego grzbietu\n"
-            "//TO DO tutaj film instruktarzowy"
+            "Ważne: Plecy muszą być przez cały czas idealnie proste – zero kociego grzbietu."
         )
         self.program_desc.setObjectName("programDesc")
         self.program_desc.setWordWrap(True)
         left_layout.addWidget(self.program_desc)
+
+        self._setup_example_video_player(left_layout, EXAMPLE_VIDEO)
 
         # Etykieta motywacyjna
         self.motivation = QLabel("🔥 Gotowy na dzisiejszy trening?")
@@ -262,3 +266,19 @@ class LobbyView(BaseView):
         main_window = self.window()
         if hasattr(main_window, 'switch_page'):
             main_window.switch_page(2)
+
+    def _setup_example_video_player(self, layout, video_path):
+        """
+        Tworzy i konfiguruje nieskończony odtwarzacz video.
+        """
+        self.video_widget = QVideoWidget()
+        self.video_widget.setObjectName("videoWidget")
+        self.video_widget.setMinimumHeight(150)
+        layout.addWidget(self.video_widget)
+
+        # Inicjalizacja odtwarzacza
+        self.media_player = QMediaPlayer()
+        self.media_player.setVideoOutput(self.video_widget)
+        self.media_player.setSource(QUrl.fromLocalFile(video_path))
+        self.media_player.setLoops(QMediaPlayer.Loops.Infinite)
+        self.media_player.play()
