@@ -1,4 +1,7 @@
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QStackedWidget
+
+from app.core.config import LOGO_WITHOUT_BG, LOGO_ICON
 from app.ui.navbar import Navbar
 from app.ui.lobby_view import LobbyView
 from app.ui.training_view import TrainingView
@@ -30,7 +33,8 @@ class MainWindow(QMainWindow):
         """
         Konfiguruje parametry techniczne głównego okna i kontenera centralnego.
         """
-        self.setWindowTitle("Asystent wiosłowania sztangą ver.0.2.0")
+        self.setWindowTitle("Barbell Row Assistant 0.4.0")
+        self.setWindowIcon(QIcon(str(LOGO_ICON)))
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -43,7 +47,7 @@ class MainWindow(QMainWindow):
         """
         Instancjonuje główne komponenty interfejsu.
         """
-        self.navbar = Navbar()
+        self.navbar = Navbar(LOGO_WITHOUT_BG)
 
         # Menadżer ekranów i dodawanie widoków
         self.stacked_widget = QStackedWidget()

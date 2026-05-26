@@ -19,7 +19,9 @@ PIPER_DIR = MODELS_DIR / "piper"
 PIPER_MODEL_FILE = PIPER_DIR / "pl_PL-darkman-medium"
 DB_PATH = APP_DIR / "db" / "training.db"
 STYLE_QSS_FILE = UI_DIR / "style.qss"
-LOADING_IMAGE = ASSETS_DIR / "loading_temp.png"
+LOGO_WITHOUT_BG = ASSETS_DIR / "logo_wbg.png"
+LOGO = ASSETS_DIR / "logo.png"
+LOGO_ICON = ASSETS_DIR / "logo.ico"
 
 # Ścieżki do audio
 TEMP_DIR = BASE_DIR / "temp"
