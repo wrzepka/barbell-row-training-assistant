@@ -73,6 +73,11 @@ class LobbyView(BaseView):
         self.program_desc.setWordWrap(True)
         left_layout.addWidget(self.program_desc)
 
+        self.video_label = QLabel(
+            "Sposób wykonania:"
+        )
+        self.video_label.setObjectName("readyLabel")
+        left_layout.addWidget(self.video_label)
         self._setup_example_video_player(left_layout, EXAMPLE_VIDEO)
 
         # Etykieta motywacyjna
@@ -273,8 +278,9 @@ class LobbyView(BaseView):
         """
         self.video_widget = QVideoWidget()
         self.video_widget.setObjectName("videoWidget")
-        self.video_widget.setMinimumHeight(150)
-        layout.addWidget(self.video_widget)
+        self.video_widget.setFixedSize(400, 225)
+
+        layout.addWidget(self.video_widget, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Inicjalizacja odtwarzacza
         self.media_player = QMediaPlayer()
