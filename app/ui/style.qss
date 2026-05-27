@@ -240,11 +240,11 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 /* ============================================ */
 
 #lobbyView {
-    background-color: #0f0f0f;
+    background-color: #1e1e1e;
 }
 
 #lobbyContentPage {
-    background-color: #0f0f0f;
+    background-color: #1e1e1e;
 }
 
 #lobbyTitle {
