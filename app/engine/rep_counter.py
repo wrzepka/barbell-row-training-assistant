@@ -2,9 +2,9 @@
 RepCounter — licznik powtórzeń wiosłowania sztangą.
 
 Algorytm (kamera boczna lub przednia):
-  Śledzimy pozycję Y nadgarstka dominującej ręki względem biodra.
-  Gdy nadgarstek idzie w górę (faza koncentryczna) i przekroczy próg,
-  a następnie opada z powrotem (faza ekscentryczna) — liczymy jedno powtórzenie.
+  Śledzimy pozycję Y nadgarstków OBU rąk względem bioder.
+  Gdy nadgarstki idą w górę (faza koncentryczna) i przekroczą próg,
+  a następnie opadają z powrotem (faza ekscentryczna) — liczymy jedno powtórzenie.
 
   Progi są względne (% odległości bark–biodro), więc działają niezależnie
   od rozdzielczości kamery i odległości od obiektywu.
@@ -15,22 +15,14 @@ from enum import Enum, auto
 
 class Phase(Enum):
     IDLE = auto()  # oczekiwanie na start
-    PULLING = auto()  # faza koncentryczna (nadgarstek idzie w górę)
-    LOWERING = auto()  # faza ekscentryczna (nadgarstek opada)
+    PULLING = auto()  # faza koncentryczna (nadgarstki idą w górę)
+    LOWERING = auto()  # faza ekscentryczna (nadgarstki opadają)
 
 
 class RepCounter:
     """
     Stateless-ish licznik powtórzeń.
     Wywołuj update() dla każdej klatki z landmarkami MediaPipe.
-
-    Parametry
-    ---------
-    pull_threshold : float
-        Jak wysoko (względnie) nadgarstek musi wznieść się względem biodra,
-        żeby uznać fazę koncentryczną za zakończoną. 0.35 = 35% odległości bark–biodro.
-    return_threshold : float
-        Jak nisko nadgarstek musi wrócić, żeby uznać powtórzenie za kompletne.
     """
 
     # Indeksy landmarków MediaPipe Pose
@@ -76,7 +68,7 @@ class RepCounter:
         new_rep = False
 
         if self._phase == Phase.IDLE:
-            # Czekamy aż nadgarstek zejdzie nisko (pozycja startowa)
+            # Czekamy aż nadgarstki zejdą nisko (pozycja startowa)
             if ratio < self.return_threshold:
                 self._phase = Phase.PULLING
 
@@ -98,27 +90,38 @@ class RepCounter:
 
     def _wrist_ratio(self, landmarks) -> float | None:
         """
-        Oblicza znormalizowaną pozycję nadgarstka.
-
-        Zwraca: (hip_y - wrist_y) / shoulder_to_hip_dist
-        Wartość > 0 oznacza że nadgarstek jest powyżej biodra.
-        Im wyżej tym większa wartość.
+        Oblicza znormalizowaną pozycję nadgarstków dla OBU stron ciała
+        i zwraca ich wartość uśrednioną, pod warunkiem że ruch jest symetryczny.
         """
         try:
             l = landmarks
 
-            # Używamy prawej strony (dominująca dla wiosłowania — można sparametryzować)
-            shoulder_y = l[self._R_SHOULDER].y
-            hip_y = l[self._R_HIP].y
-            wrist_y = l[self._R_WRIST].y
+            # 1. Strona prawa
+            r_shoulder_y = l[self._R_SHOULDER].y
+            r_hip_y = l[self._R_HIP].y
+            r_wrist_y = l[self._R_WRIST].y
+            r_dist = abs(r_hip_y - r_shoulder_y)
 
-            dist = abs(hip_y - shoulder_y)
-            if dist < 1e-6:
+            # 2. Strona lewa
+            l_shoulder_y = l[self._L_SHOULDER].y
+            l_hip_y = l[self._L_HIP].y
+            l_wrist_y = l[self._L_WRIST].y
+            l_dist = abs(l_hip_y - l_shoulder_y)
+
+            if r_dist < 1e-6 or l_dist < 1e-6:
                 return None
 
-            # Wartość dodatnia = nadgarstek powyżej biodra
-            ratio = (hip_y - wrist_y) / dist
-            return float(ratio)
+            # Obliczamy ratio dla obu rąk osobno
+            r_ratio = (r_hip_y - r_wrist_y) / r_dist
+            l_ratio = (l_hip_y - l_wrist_y) / l_dist
+
+            # ZABEZPIECZENIE: Jeśli różnica wysokości między nadgarstkami
+            # jest zbyt duża (np. ktoś podniósł tylko jedną rękę), ignorujemy ruch.
+            if abs(r_ratio - l_ratio) > 0.20:
+                return None
+
+            # Zwracamy średnią wartość dla obu rąk
+            return float((r_ratio + l_ratio) / 2.0)
 
         except (IndexError, AttributeError):
             return None
