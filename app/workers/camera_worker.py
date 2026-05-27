@@ -9,7 +9,6 @@ class CameraWorker(QThread):
     """
     Wątek czytający klatki z jednej kamery i emitujący je do GUI.
     """
-
     frame_ready = Signal(QImage)
 
     def __init__(self, index: int, parent=None):
@@ -20,7 +19,9 @@ class CameraWorker(QThread):
     def run(self):
         backend = cv2.CAP_DSHOW if isinstance(self._index, int) else cv2.CAP_ANY
         cap = cv2.VideoCapture(self._index, backend)
+
         if not cap.isOpened():
+
             return
 
 
@@ -33,10 +34,12 @@ class CameraWorker(QThread):
             return
 
         self._running = True
+
         while self._running:
             ok, frame = cap.read()
             if not ok:
                 break
+
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             h, w, ch = rgb.shape
             img = QImage(rgb.data, w, h, ch * w, QImage.Format.Format_RGB888).copy()
@@ -47,5 +50,3 @@ class CameraWorker(QThread):
     def stop(self):
         self._running = False
         self.quit()
-
-
