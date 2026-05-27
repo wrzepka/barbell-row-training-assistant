@@ -17,12 +17,15 @@ class SkeletonHistoryView(QWidget):
 
         columns_layout = QHBoxLayout()
         columns_layout.setSpacing(50)
+
+        # zawartość lewej kolumny
         left_column = ShimmerBlock(width=1200)
         columns_layout.addWidget(left_column, stretch=7)
 
         right_column_layout = QVBoxLayout()
         right_column_layout.setSpacing(20)
 
+        # zawartość prawej kolumny
         mock_form_card = ShimmerBlock()
         right_column_layout.addWidget(mock_form_card, stretch=3)
         training_graph_card = ShimmerBlock()

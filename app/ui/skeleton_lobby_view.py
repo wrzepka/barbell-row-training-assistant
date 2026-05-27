@@ -17,12 +17,15 @@ class SkeletonLobbyView(QWidget):
 
         columns_layout = QHBoxLayout()
         columns_layout.setSpacing(40)
+
+        # zawartość prawej kolumny
         left_column = ShimmerBlock()
         columns_layout.addWidget(left_column, stretch=4)
 
         right_column_layout = QVBoxLayout()
         right_column_layout.setSpacing(20)
 
+        # zawartość prawej kolumny
         weekly_result_card = ShimmerBlock(height=525)
         right_column_layout.addWidget(weekly_result_card, stretch=6)
         last_training_card = ShimmerBlock()
