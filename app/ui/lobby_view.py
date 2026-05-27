@@ -37,7 +37,7 @@ class LobbyView(BaseView):
         - prawy panel z wykresem tygodniowym i ostatnią sesją
         """
         # Tytuł strony
-        self.title_label = QLabel("BARBEL ROW TRENING")
+        self.title_label = QLabel("Witaj z powrotem!")
         self.title_label.setObjectName("lobbyTitle")
         self.title_label.setAlignment(Qt.AlignCenter)
 
