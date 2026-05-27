@@ -22,6 +22,7 @@ STYLE_QSS_FILE = UI_DIR / "style.qss"
 LOGO_WITHOUT_BG = ASSETS_DIR / "logo_wbg.png"
 LOGO = ASSETS_DIR / "logo.png"
 LOGO_ICON = ASSETS_DIR / "logo.ico"
+EXAMPLE_VIDEO = ASSETS_DIR / "training-example.mp4"
 
 # Ścieżki do audio
 TEMP_DIR = BASE_DIR / "temp"
