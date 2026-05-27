@@ -26,8 +26,6 @@ class SkeletonHistoryView(QWidget):
         right_column_layout.setSpacing(20)
 
         # zawartość prawej kolumny
-        mock_form_card = ShimmerBlock()
-        right_column_layout.addWidget(mock_form_card, stretch=3)
         training_graph_card = ShimmerBlock()
         right_column_layout.addWidget(training_graph_card, stretch=5)
         summary_card = ShimmerBlock()
