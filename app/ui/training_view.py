@@ -1,15 +1,11 @@
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
+from PySide6.QtCore import QTimer
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
 from app.ui.stats_widget import StatsWidget
 from app.ui.skeleton_training_view import SkeletonTrainingView
 from app.engine.analysis_worker import AnalysisWorker
-
-
-# TODO: ogarnąć sposób na dobre szukanie indeksów kamer
-SIDE_CAM_INDEX  = 2
-FRONT_CAM_INDEX = 3
 
 
 class TrainingView(BaseView):
@@ -35,13 +31,19 @@ class TrainingView(BaseView):
         self._connect_analysis()
 
     def _create_widgets(self):
-        # Kamera boczna — liczy powt. + wykrywa zaokrąglone plecy i bujanie
-        self.cam_side = PoseCameraWidget(SIDE_CAM_INDEX, "KAMERA 1\n(Bok)")
+        # TODO: ogarnąć sposób na dobre szukanie indeksów kamer
+        side_idx = 1
+        front_idx = 2
 
-        # Kamera przednia — wykrywa flaring łokci
-        self.cam_front = PoseCameraWidget(FRONT_CAM_INDEX, "KAMERA 2\n(Przód)")
+        print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
-        # Panel statystyk
+        # Kamera boczna
+        self.cam_side = PoseCameraWidget(side_idx, "KAMERA 1\n(Bok)")
+
+        # Kamera przednia
+        self.cam_front = PoseCameraWidget(front_idx, "KAMERA 2\n(Przód)")
+
+        # Inicjalizacja widżetu statystyk
         self.stats_widget = StatsWidget()
         self.stats_widget.reset_btn.clicked.connect(self._on_reset)
 
@@ -75,9 +77,15 @@ class TrainingView(BaseView):
     # ── Cykl życia ────────────────────────────────────────────────────────────
 
     def showEvent(self, event):
-        self.cam_side.start_camera()
-        self.cam_front.start_camera()
         super().showEvent(event)
+
+        print("[DEBUG] showEvent: Uruchamianie kamery 1 (Bok)...")
+        self.cam_side.start_camera()
+        QTimer.singleShot(750, self._start_second_camera)
+
+    def _start_second_camera(self):
+        print("[DEBUG] showEvent: Uruchamianie kamery 2 (Przód)...")
+        self.cam_front.start_camera()
 
     def hideEvent(self, event):
         super().hideEvent(event)
