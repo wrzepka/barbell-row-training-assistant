@@ -14,9 +14,6 @@ class SkeletonTrainingView(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
-        # blok dla tekstu
-        layout.addWidget(ShimmerBlock(height=80))
-
         # bloki dla kamer
         cam_layout = QHBoxLayout()
         cam_layout.addWidget(ShimmerBlock())
@@ -24,4 +21,4 @@ class SkeletonTrainingView(QWidget):
         layout.addLayout(cam_layout, stretch=6)
 
         # blok dla statystyk
-        layout.addWidget(ShimmerBlock(height=120))
+        layout.addWidget(ShimmerBlock(height=240))
