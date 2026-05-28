@@ -1,54 +1,51 @@
 """
 RepCounter — licznik powtórzeń wiosłowania sztangą.
 
-Algorytm (kamera boczna lub przednia):
-  Śledzimy pozycję Y nadgarstka dominującej ręki względem biodra.
-  Gdy nadgarstek idzie w górę (faza koncentryczna) i przekroczy próg,
-  a następnie opada z powrotem (faza ekscentryczna) — liczymy jedno powtórzenie.
+Ratio = (wrist_y - shoulder_y) / (hip_y - shoulder_y)
 
-  Progi są względne (% odległości bark–biodro), więc działają niezależnie
-  od rozdzielczości kamery i odległości od obiektywu.
+Wartości zmierzone empirycznie:
+  ~0.6–0.7  szczyt ruchu  (nadgarstki przy klatce)
+  ~1.2–1.4  dół           (nadgarstki opuszczone poniżej bioder)
+
+Maszyna stanów:
+  IDLE     → PULLING  gdy ratio >= return_threshold  (ręce na dole)
+  PULLING  → TOP      gdy ratio <= pull_threshold    (ręce na górze) → tu +1 rep
+  TOP      → LOWERING gdy ratio > pull_threshold
+  LOWERING → PULLING  gdy ratio >= return_threshold  (gotowy na kolejny)
 """
 
+from __future__ import annotations
+import logging
 from enum import Enum, auto
+
+logger = logging.getLogger(__name__)
 
 
 class Phase(Enum):
-    IDLE = auto()  # oczekiwanie na start
-    PULLING = auto()  # faza koncentryczna (nadgarstek idzie w górę)
-    LOWERING = auto()  # faza ekscentryczna (nadgarstek opada)
+    IDLE     = auto()
+    PULLING  = auto()
+    TOP      = auto()
+    LOWERING = auto()
 
 
 class RepCounter:
-    """
-    Stateless-ish licznik powtórzeń.
-    Wywołuj update() dla każdej klatki z landmarkami MediaPipe.
-
-    Parametry
-    ---------
-    pull_threshold : float
-        Jak wysoko (względnie) nadgarstek musi wznieść się względem biodra,
-        żeby uznać fazę koncentryczną za zakończoną. 0.35 = 35% odległości bark–biodro.
-    return_threshold : float
-        Jak nisko nadgarstek musi wrócić, żeby uznać powtórzenie za kompletne.
-    """
-
-    # Indeksy landmarków MediaPipe Pose
-    _L_SHOULDER = 11
     _R_SHOULDER = 12
-    _L_HIP = 23
-    _R_HIP = 24
-    _L_WRIST = 15
-    _R_WRIST = 16
+    _R_HIP      = 24
+    _R_WRIST    = 16
 
-    def __init__(self, pull_threshold: float = 0.35, return_threshold: float = 0.15):
-        self.pull_threshold = pull_threshold
+    def __init__(
+        self,
+        pull_threshold:   float = 0.75,   # poniżej tego = ręce na górze (rep!)
+        return_threshold: float = 1.10,   # powyżej tego = ręce na dole (start)
+        debug:            bool  = False,
+    ):
+        self.pull_threshold   = pull_threshold
         self.return_threshold = return_threshold
+        self.debug            = debug
 
-        self._reps = 0
-        self._phase = Phase.IDLE
-
-    # ── publiczne API ─────────────────────────────────────────────────────────
+        self._reps             = 0
+        self._phase            = Phase.IDLE
+        self._form_ok_this_rep = True
 
     @property
     def reps(self) -> int:
@@ -58,67 +55,72 @@ class RepCounter:
     def phase(self) -> Phase:
         return self._phase
 
-    def reset(self):
-        self._reps = 0
-        self._phase = Phase.IDLE
+    @property
+    def calib_progress(self) -> float:
+        return 1.0   # brak kalibracji — zawsze gotowy
 
-    def update(self, landmarks) -> bool:
-        """
-        Przetwarza jedną klatkę landmarków.
+    def reset(self) -> None:
+        self._reps             = 0
+        self._phase            = Phase.IDLE
+        self._form_ok_this_rep = True
 
-        :param landmarks: lista landmarks z results.pose_landmarks.landmark (MediaPipe)
-        :returns: True jeśli właśnie zaliczono nowe powtórzenie
-        """
+    def update(self, landmarks, form_valid: bool = True) -> bool:
         ratio = self._wrist_ratio(landmarks)
         if ratio is None:
             return False
 
+        if self.debug:
+            logger.debug("ratio=%.3f  phase=%-8s  form=%s", ratio, self._phase.name, form_valid)
+
+        return self._fsm(ratio, form_valid)
+
+    def _fsm(self, ratio: float, form_valid: bool) -> bool:
         new_rep = False
 
         if self._phase == Phase.IDLE:
-            # Czekamy aż nadgarstek zejdzie nisko (pozycja startowa)
-            if ratio < self.return_threshold:
-                self._phase = Phase.PULLING
+            if ratio >= self.return_threshold:
+                self._phase            = Phase.PULLING
+                self._form_ok_this_rep = True
+                if self.debug:
+                    logger.debug("→ PULLING")
 
         elif self._phase == Phase.PULLING:
-            # Czekamy na pełne podciągnięcie
-            if ratio >= self.pull_threshold:
+            if not form_valid:
+                self._form_ok_this_rep = False
+            if ratio <= self.pull_threshold:
+                self._phase = Phase.TOP
+                if self._form_ok_this_rep:
+                    self._reps += 1
+                    new_rep = True
+                    if self.debug:
+                        logger.debug("✓ REP %d  ratio=%.3f", self._reps, ratio)
+                elif self.debug:
+                    logger.debug("✗ odrzucony (forma)")
+
+        elif self._phase == Phase.TOP:
+            if ratio > self.pull_threshold:
                 self._phase = Phase.LOWERING
+                if self.debug:
+                    logger.debug("→ LOWERING")
 
         elif self._phase == Phase.LOWERING:
-            # Czekamy na powrót do pozycji startowej
-            if ratio < self.return_threshold:
-                self._reps += 1
-                self._phase = Phase.PULLING
-                new_rep = True
+            if ratio >= self.return_threshold:
+                self._phase            = Phase.PULLING
+                self._form_ok_this_rep = True
+                if self.debug:
+                    logger.debug("→ PULLING (kolejny)")
 
         return new_rep
 
-    # ── obliczenia ────────────────────────────────────────────────────────────
-
     def _wrist_ratio(self, landmarks) -> float | None:
-        """
-        Oblicza znormalizowaną pozycję nadgarstka.
-
-        Zwraca: (hip_y - wrist_y) / shoulder_to_hip_dist
-        Wartość > 0 oznacza że nadgarstek jest powyżej biodra.
-        Im wyżej tym większa wartość.
-        """
         try:
-            l = landmarks
-
-            # Używamy prawej strony (dominująca dla wiosłowania — można sparametryzować)
-            shoulder_y = l[self._R_SHOULDER].y
-            hip_y = l[self._R_HIP].y
-            wrist_y = l[self._R_WRIST].y
-
-            dist = abs(hip_y - shoulder_y)
+            lm   = landmarks
+            s_y  = lm[self._R_SHOULDER].y
+            h_y  = lm[self._R_HIP].y
+            w_y  = lm[self._R_WRIST].y
+            dist = abs(h_y - s_y)
             if dist < 1e-6:
                 return None
-
-            # Wartość dodatnia = nadgarstek powyżej biodra
-            ratio = (hip_y - wrist_y) / dist
-            return float(ratio)
-
+            return (w_y - s_y) / dist
         except (IndexError, AttributeError):
             return None
