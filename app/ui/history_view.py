@@ -58,7 +58,7 @@ class HistoryCard(QFrame):
         txt_box.addWidget(d_lbl)
         txt_box.addWidget(ex_lbl)
 
-        stats_lbl = QLabel(f"{data['weight']} | {data['reps']} powt. | {data['sets']} serie | {data['duration']}")
+        stats_lbl = QLabel(f"{data['sets']} serie | {data['reps']} powt. łącznie | {data['duration']}")
         stats_lbl.setObjectName("statsLabel")
 
         score_val = QLabel(f"{data['score']}%")
@@ -80,11 +80,32 @@ class HistoryCard(QFrame):
 
         det_layout = QVBoxLayout(self.details_widget)
         det_layout.setContentsMargins(0, 15, 0, 0)
+        det_layout.setSpacing(6)
 
         line = QFrame()
         line.setObjectName("separator")
         det_layout.addWidget(line)
 
+        # ── Serie ──────────────────────────────────────────────────────────────
+        sets_detail = data.get("sets_detail", [])
+        if sets_detail:
+            sets_title = QLabel("SERIE:")
+            sets_title.setObjectName("fixTitle")
+            det_layout.addWidget(sets_title)
+
+            for s in sets_detail:
+                row = QLabel(
+                    f"  Seria {s['set_nr']}:  {s['weight']:.1f} kg  ×  {s['reps']} powt."
+                )
+                row.setObjectName("bulletLabel")
+                det_layout.addWidget(row)
+
+            # Separator przed uwagami
+            sep2 = QFrame()
+            sep2.setObjectName("separator")
+            det_layout.addWidget(sep2)
+
+        # ── Uwagi z analizy ────────────────────────────────────────────────────
         fix_title = QLabel("UWAGI Z ANALIZY POSTAWY:")
         fix_title.setObjectName("fixTitle")
         det_layout.addWidget(fix_title)
