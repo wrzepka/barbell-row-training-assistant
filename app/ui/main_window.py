@@ -100,14 +100,14 @@ class MainWindow(QMainWindow):
 
         # Można uprościć kod tutaj bazując na sygnałach, które będą przechwtywane w VoiceManager
         # przykładowa logika reagowania na komendy
-        if "trening" in text.lower():
+        if "trening" in text.lower() or "terenie" in text.lower() or "trendy" in text.lower() or "rynek" in text.lower() or "premier" in text.lower() or "trend" in text.lower() or "teren" in text.lower():
             self.switch_page(1)  #przełącza na trening
             self.voice_manager.speak("Przechodzę do treningu.")
 
-        elif "historia" in text.lower() or "historie" in text.lower():
+        elif "historia" in text.lower() or "historie" in text.lower() or "zdrowia" in text.lower() or "historię" in text.lower():
             self.switch_page(2)  #przełącza na historie
             self.voice_manager.speak("Oto twoja historia treningów.")
-        elif "lobby" in text.lower() or "start" in text.lower():
+        elif "lobby" in text.lower() or "start" in text.lower() or "po lody" in text.lower() or "loty" in text.lower() or "lampki" in text.lower() or "lotu" in text.lower() or "lody" in text.lower() or "robi" in text.lower() or "nowi" in text.lower() or "logiki" in text.lower() or "roku" in text.lower() or "nowy" in text.lower() or "lobbing" in text.lower() or "nogi" in text.lower() or "lubi" in text.lower() or "lampy" in text.lower() or "login" in text.lower() or "lori" in text.lower() or "wątpie" in text.lower() or "lot" in text.lower() or "stan" in text.lower():
             self.switch_page(0) #przełąccza na start
             self.voice_manager.speak("Przechodzę na stronę startową")
 
