@@ -1,18 +1,23 @@
 import cv2
 
-print("Szukam kamer...\n")
 
-found = []
-for i in range(6):
-    cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
-    if cap.isOpened():
-        ok, frame = cap.read()
-        status = f"OK  ({frame.shape[1]}x{frame.shape[0]})" if ok else "otwarta, ale brak obrazu"
-        print(f"  Kamera {i}: {status}")
-        found.append(i)
-    else:
-        print(f"  Kamera {i}: brak")
-    cap.release()
+def find_cameras(max_cameras=6):
+    found = []
 
-print(f"\nZnalezione indeksy: {found}")
-print("Ustaw LAPTOP_CAM_INDEX i DROIDCAM_INDEX w training_view.py")
+    for i in range(max_cameras):
+        cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+
+        if cap.isOpened():
+            ok, frame = cap.read()
+
+            if ok:
+                found.append(i)
+
+        cap.release()
+
+    return found
+
+
+if __name__ == "__main__":
+    cameras = find_cameras()
+    print(f"Znalezione indeksy: {cameras}")

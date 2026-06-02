@@ -10,6 +10,7 @@ from app.ui.stats_widget import StatsWidget
 from app.ui.skeleton_training_view import SkeletonTrainingView
 from app.engine.analysis_worker import AnalysisWorker
 from app.db.database import add_training_entry
+from app.utils.find_cameras import find_cameras
 
 
 class TrainingView(BaseView):
@@ -51,9 +52,13 @@ class TrainingView(BaseView):
     # ── Tworzenie widgetów ────────────────────────────────────────────────────
 
     def _create_widgets(self):
-        # TODO: ogarnąć sposób na dobre szukanie indeksów kamer
-        side_idx = 1
-        front_idx = 2
+        camera_indexes = find_cameras()
+
+        if len(camera_indexes) < 2:
+            raise RuntimeError("Wymagane są 2 kamery.")
+
+        side_idx = camera_indexes[0]
+        front_idx = camera_indexes[1]
 
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
