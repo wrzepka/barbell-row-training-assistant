@@ -14,6 +14,7 @@ class STTWorker(QThread):
     def __init__(self):
         super().__init__()
         self._is_running = True   # flaga do zatrzymania wątku
+        self._is_paused = False   # flaga wyciszenia podczas odtwarzania TTS
 
     def run(self):
         """Wątek: ładuje model Vosk i w pętli odczytuje dźwięk z mikrofonu."""
@@ -38,6 +39,12 @@ class STTWorker(QThread):
         # Główna pętla – czytamy fragmenty audio i sprawdzamy, czy coś rozpoznano
         while self._is_running:
             data = stream.read(4000, exception_on_overflow=False)
+
+            # Gdy TTS mówi: czytamy bufor mikrofonu (żeby nie przepełnił),
+            # ale nie przekazujemy danych do rozpoznawania
+            if self._is_paused:
+                continue
+
             if recognizer.AcceptWaveform(data):
                 result = json.loads(recognizer.Result())
                 text = result.get("text", "")
@@ -48,6 +55,14 @@ class STTWorker(QThread):
         stream.stop_stream()
         stream.close()
         p.terminate()
+
+    def pause(self):
+        """Wstrzymuje rozpoznawanie mowy (np. podczas odtwarzania TTS)."""
+        self._is_paused = True
+
+    def resume(self):
+        """Wznawia rozpoznawanie mowy po zakończeniu odtwarzania TTS."""
+        self._is_paused = False
 
     def stop(self):
         """Zatrzymuje wątek i czeka na jego zakończenie."""
