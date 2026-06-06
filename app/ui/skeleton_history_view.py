@@ -19,7 +19,7 @@ class SkeletonHistoryView(QWidget):
         columns_layout.setSpacing(50)
 
         # zawartość lewej kolumny
-        left_column = ShimmerBlock(width=1200)
+        left_column = ShimmerBlock()
         columns_layout.addWidget(left_column, stretch=7)
 
         right_column_layout = QVBoxLayout()
