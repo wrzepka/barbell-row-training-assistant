@@ -51,7 +51,7 @@ class TrainingView(BaseView):
             raise RuntimeError("Wymagane są 2 kamery.")
 
         side_idx = camera_indexes[0]
-        front_idx = camera_indexes[0]
+        front_idx = camera_indexes[1]
 
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
