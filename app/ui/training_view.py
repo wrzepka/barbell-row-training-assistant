@@ -47,8 +47,8 @@ class TrainingView(BaseView):
     def _create_widgets(self):
         camera_indexes = find_cameras()
 
-        # if len(camera_indexes) < 2:
-        #     raise RuntimeError("Wymagane są 2 kamery.")
+        if len(camera_indexes) < 2:
+            raise RuntimeError("Wymagane są 2 kamery.")
 
         side_idx = camera_indexes[0]
         front_idx = camera_indexes[0]
@@ -56,7 +56,7 @@ class TrainingView(BaseView):
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
         self.cam_side = PoseCameraWidget(side_idx)
-        self.cam_front = PoseCameraWidget(front_idx)
+        self.cam_front = PoseCameraWidget(front_idx,)
 
         self.stats_widget = StatsWidget()
         self.stats_widget.reset_btn.clicked.connect(self._on_reset_set)
