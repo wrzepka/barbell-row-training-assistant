@@ -171,6 +171,8 @@ class LobbyView(BaseView):
         bar_set = QBarSet("Aktywność (min)")
         for v in values:
             bar_set.append(v)
+            bar_set.setLabelColor(QColor("#000000"))
+            bar_set.setLabelFont(QFont("Arial", 9, QFont.Bold))
         bar_set.setColor(QColor("#CCFF00"))
 
         # Seria słupkowa
@@ -178,11 +180,6 @@ class LobbyView(BaseView):
         series.append(bar_set)
         series.setBarWidth(0.7)
         series.setLabelsVisible(True)
-        try:
-            series.setLabelsFont(QFont("Arial", 9, QFont.Bold))
-            series.setLabelsColor(QColor("#FFFFFF"))
-        except Exception:
-            pass
 
         # Główny obiekt wykresu
         chart = QChart()
