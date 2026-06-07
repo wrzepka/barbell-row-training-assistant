@@ -65,8 +65,8 @@ class TrainingView(BaseView):
         self.control_panel.end_set_requested.connect(self._on_end_set)
         self.control_panel.end_training_requested.connect(self._on_end_training)
 
-        # ── [DEBUG] Panel tymczasowy – symulacja powtórzeń bez kamery ─────────
-        self._debug_panel = self._create_debug_panel()
+        # # ── [DEBUG] Panel tymczasowy – symulacja powtórzeń bez kamery ─────────
+        # self._debug_panel = self._create_debug_panel()
 
     # ── Layout ────────────────────────────────────────────────────────────────
 
@@ -89,7 +89,7 @@ class TrainingView(BaseView):
 
         side_layout.addWidget(self.stats_widget, stretch=0)
         side_layout.addWidget(self.control_panel, stretch=1)
-        side_layout.addWidget(self._debug_panel, stretch=0)  # [DEBUG]
+        # side_layout.addWidget(self._debug_panel, stretch=0)  # [DEBUG]
 
         main_layout.addWidget(side_panel, stretch=2)
 

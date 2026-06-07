@@ -98,9 +98,9 @@ class LobbyView(BaseView):
         # Widget tygodniowy (wykres słupkowy)
         self.weekly_widget = QWidget()
         self.weekly_widget.setObjectName("weeklyWidget")
-        weekly_layout = QVBoxLayout(self.weekly_widget)
-        weekly_layout.setContentsMargins(15, 15, 15, 15)
-        weekly_layout.setSpacing(5)
+        self.weekly_layout = QVBoxLayout(self.weekly_widget)
+        self.weekly_layout.setContentsMargins(15, 15, 15, 15)
+        self.weekly_layout.setSpacing(5)
 
         weekly_header = QLabel("TYGODNIOWY WYNIK")
         weekly_header.setObjectName("weeklyHeader")
@@ -108,9 +108,9 @@ class LobbyView(BaseView):
         weekly_percent.setObjectName("weeklyPercent")
 
         self.chart_view = self._create_weekly_chart()
-        weekly_layout.addWidget(weekly_header)
-        weekly_layout.addWidget(weekly_percent)
-        weekly_layout.addWidget(self.chart_view)
+        self.weekly_layout.addWidget(weekly_header)
+        self.weekly_layout.addWidget(weekly_percent)
+        self.weekly_layout.addWidget(self.chart_view)
         right_layout.addWidget(self.weekly_widget)
 
         # Widget ostatniej sesji treningowej
@@ -159,25 +159,31 @@ class LobbyView(BaseView):
 
     def _create_weekly_chart(self) -> QChartView:
         """
-        Tworzy wykres słupkowy tygodniowej aktywności na podstawie danych z bazy.
-        Pobiera sumaryczny czas treningów (minuty) dla każdego dnia bieżącego tygodnia.
+        Tworzy i konfiguruje wykres słupkowy przedstawiający tygodniową aktywność (minuty).
+        Wykres zawiera dane dla każdego dnia tygodnia, z dostosowanym stylem wizualnym.
+
+        Returns:
+            QChartView: Widok wykresu gotowy do wstawienia do layoutu.
         """
         days = ["PON", "WT", "ŚR", "CZW", "PT", "SOB", "NIE"]
         weekly_data = get_weekly_training_minutes()
         values = [weekly_data[d] for d in days]
 
+        # Zestaw danych dla słupków
         bar_set = QBarSet("Aktywność (min)")
         for v in values:
             bar_set.append(v)
-        bar_set.setLabelColor(QColor("#000000"))
-        bar_set.setLabelFont(QFont("Arial", 9, QFont.Bold))
+            bar_set.setLabelColor(QColor("#000000"))
+            bar_set.setLabelFont(QFont("Arial", 9, QFont.Bold))
         bar_set.setColor(QColor("#CCFF00"))
 
+        # Seria słupkowa
         series = QBarSeries()
         series.append(bar_set)
         series.setBarWidth(0.7)
         series.setLabelsVisible(True)
 
+        # Główny obiekt wykresu
         chart = QChart()
         chart.addSeries(series)
         chart.setTitle("")
@@ -187,6 +193,7 @@ class LobbyView(BaseView):
         chart.setPlotAreaBackgroundVisible(True)
         chart.setMinimumHeight(200)
 
+        # Oś X (kategorie dni)
         axis_x = QBarCategoryAxis()
         axis_x.append(days)
         axis_x.setLabelsColor(QColor("#FFFFFF"))
@@ -194,9 +201,9 @@ class LobbyView(BaseView):
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
+        # Oś Y (wartości w minutach)
         axis_y = QValueAxis()
-        max_val = max(values) if any(values) else 60
-        axis_y.setRange(0, max_val + 10)
+        axis_y.setRange(0, max(values) + 10 if any(values) else 60)
         axis_y.setTitleText("min")
         axis_y.setTitleBrush(QColor("#FFFFFF"))
         axis_y.setTitleFont(QFont("Arial", 9, QFont.Bold))
@@ -209,6 +216,7 @@ class LobbyView(BaseView):
         chart.setBackgroundVisible(True)
         chart.setDropShadowEnabled(False)
 
+        # Widok wykresu z włączonym antyaliasingiem
         chart_view = QChartView(chart)
         chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
@@ -241,18 +249,21 @@ class LobbyView(BaseView):
         return box
 
     def _setup_layout(self):
-        """
-        Układa wszystkie elementy na stronie content_page:
-        - tytuł na górze
-        - główny kontener z dwoma panelami pod spodem
-        Ustawia marginesy i odstępy.
-        """
         self.content_page.setObjectName("lobbyContentPage")
         layout = QVBoxLayout(self.content_page)
         layout.setContentsMargins(30, 30, 30, 30)
         layout.setSpacing(10)
         layout.addWidget(self.title_label)
         layout.addWidget(self.main_content)
+
+    def showEvent(self, event):
+        """Odświeża wykres tygodniowy przy każdym wejściu na stronę lobby."""
+        super().showEvent(event)
+        # Usuń stary chart_view i wstaw nowy z aktualnymi danymi z bazy
+        self.weekly_layout.removeWidget(self.chart_view)
+        self.chart_view.deleteLater()
+        self.chart_view = self._create_weekly_chart()
+        self.weekly_layout.addWidget(self.chart_view)
 
     def _on_view_details(self):
         """

@@ -91,10 +91,13 @@ def get_weekly_training_minutes() -> dict:
 
     for date_str, duration_str in rows:
         try:
-            # Parsujemy format "MM:SS" lub "N min"
+            # Parsujemy możliwe formaty duration:
+            # "MM:SS"  → format z timera (np. "00:10" = 10 sekund, "18:45" = 18 min 45 sek)
+            # "N min"  → stary format tekstowy (np. "18 min")
             if ":" in duration_str:
                 parts = duration_str.split(":")
-                minutes = int(parts[0]) + round(int(parts[1]) / 60)
+                total_seconds = int(parts[0]) * 60 + int(parts[1])
+                minutes = max(1, round(total_seconds / 60))  # min. 1 minuta żeby krótkie treningi były widoczne
             elif "min" in duration_str:
                 minutes = int(duration_str.replace("min", "").strip())
             else:
