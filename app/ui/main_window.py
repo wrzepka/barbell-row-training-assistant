@@ -98,16 +98,17 @@ class MainWindow(QMainWindow):
         """
         print(f"[{text}]")
 
-        # Można uprościć kod tutaj bazując na sygnałach, które będą przechwtywane w VoiceManager
-        # przykładowa logika reagowania na komendy
-        if "trening" in text.lower():
+
+        training_list = ["trening","terenie","trendy","rynek","premier","technik","trend","teren"]
+        history_list =["historia","historie","zdrowia","historię"]
+        lobby_list = ["lobby","po lody","loty","lampki","lotu","lody","robi","logiki","roku","nowy","lobbing","nogi","lubi","lampy","login","lori","wątpię","lot","start","stan"]
+        if any(word in text.lower() for word in training_list):
             self.switch_page(1)  #przełącza na trening
             self.voice_manager.speak("Przechodzę do treningu.")
-
-        elif "historia" in text.lower() or "historie" in text.lower():
+        elif any(word in text.lower() for word in history_list):
             self.switch_page(2)  #przełącza na historie
             self.voice_manager.speak("Oto twoja historia treningów.")
-        elif "lobby" in text.lower() or "start" in text.lower():
+        elif any(word in text.lower() for word in lobby_list):
             self.switch_page(0) #przełąccza na start
             self.voice_manager.speak("Przechodzę na stronę startową")
 
