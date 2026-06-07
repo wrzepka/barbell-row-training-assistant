@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
-    QHBoxLayout, QVBoxLayout, QWidget
+    QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QLabel
 )
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
@@ -65,6 +65,9 @@ class TrainingView(BaseView):
         self.control_panel.end_set_requested.connect(self._on_end_set)
         self.control_panel.end_training_requested.connect(self._on_end_training)
 
+        # ── [DEBUG] Panel tymczasowy – symulacja powtórzeń bez kamery ─────────
+        self._debug_panel = self._create_debug_panel()
+
     # ── Layout ────────────────────────────────────────────────────────────────
 
     def _setup_layout(self):
@@ -86,6 +89,7 @@ class TrainingView(BaseView):
 
         side_layout.addWidget(self.stats_widget, stretch=0)
         side_layout.addWidget(self.control_panel, stretch=1)
+        side_layout.addWidget(self._debug_panel, stretch=0)  # [DEBUG]
 
         main_layout.addWidget(side_panel, stretch=2)
 
@@ -155,6 +159,63 @@ class TrainingView(BaseView):
     def _on_reset_set(self):
         self._analysis_worker.reset()
         self._current_reps = 0
+    #
+    # # ── [DEBUG] Symulacja powtórzeń bez kamery ────────────────────────────────
+    #
+    # def _create_debug_panel(self) -> QWidget:
+    #     """Tymczasowy panel do ręcznego nabijania powtórzeń podczas testów bez kamery."""
+    #     panel = QWidget()
+    #     panel.setObjectName("debugPanel")
+    #     panel.setStyleSheet(
+    #         "QWidget#debugPanel { background: #3a2a00; border: 1px solid #cc8800; border-radius: 6px; }"
+    #         "QLabel { color: #ffcc44; font-size: 11px; }"
+    #         "QPushButton { background: #cc8800; color: black; font-weight: bold; "
+    #         "border-radius: 4px; padding: 4px 12px; }"
+    #         "QPushButton:pressed { background: #ffaa00; }"
+    #     )
+    #     layout = QVBoxLayout(panel)
+    #     layout.setContentsMargins(10, 8, 10, 8)
+    #     layout.setSpacing(6)
+    #
+    #     title = QLabel("⚠ TRYB DEBUG – symulacja kamery")
+    #     title.setAlignment(Qt.AlignCenter)
+    #     layout.addWidget(title)
+    #
+    #     btn_row = QHBoxLayout()
+    #     btn_row.setSpacing(8)
+    #
+    #     btn_minus = QPushButton("− Usuń powt.")
+    #     btn_minus.clicked.connect(self._debug_remove_rep)
+    #
+    #     btn_plus = QPushButton("+ Dodaj powt.")
+    #     btn_plus.clicked.connect(self._debug_add_rep)
+    #
+    #     btn_row.addWidget(btn_minus)
+    #     btn_row.addWidget(btn_plus)
+    #     layout.addLayout(btn_row)
+    #
+    #     return panel
+    #
+    # def _debug_add_rep(self) -> None:
+    #     """Symuluje zaliczenie jednego powtórzenia (jak gdyby kamera wykryła ruch)."""
+    #     self._current_reps += 1
+    #     # Uruchom timer przy pierwszym powtórzeniu
+    #     if self._current_reps == 1:
+    #         self.control_panel.start_timer()
+    #     # Wyemituj sztuczny wynik do StatsWidget
+    #     from app.engine.analysis_worker import AnalysisResult
+    #     self._analysis_worker.stats_updated.emit(
+    #         AnalysisResult(reps=self._current_reps, phase="PULLING", errors=[], new_rep=True)
+    #     )
+    #
+    # def _debug_remove_rep(self) -> None:
+    #     """Usuwa jedno powtórzenie (korekta pomyłki)."""
+    #     if self._current_reps > 0:
+    #         self._current_reps -= 1
+    #         from app.engine.analysis_worker import AnalysisResult
+    #         self._analysis_worker.stats_updated.emit(
+    #             AnalysisResult(reps=self._current_reps, phase="PULLING", errors=[], new_rep=False)
+    #         )
 
     # ── Cykl życia kamer ──────────────────────────────────────────────────────
 

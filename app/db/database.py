@@ -61,6 +61,54 @@ def add_training_entry(weight, reps, sets, duration, score, to_fix_list, sets_de
     connection.close()
 
 
+def get_weekly_training_minutes() -> dict:
+    """
+    Zwraca sumaryczny czas treningów (w minutach) dla każdego dnia bieżącego tygodnia
+    (poniedziałek–niedziela), obliczony na podstawie bieżącej daty systemowej.
+
+    Returns:
+        dict: {"PON": int, "WT": int, ..., "NIE": int} – minuty per dzień, 0 jeśli brak treningu.
+    """
+    import datetime as dt
+    day_labels = ["PON", "WT", "ŚR", "CZW", "PT", "SOB", "NIE"]
+    result = {d: 0 for d in day_labels}
+
+    today = datetime.now().date()
+    week_start = today - dt.timedelta(days=today.weekday())
+    week_end = week_start + dt.timedelta(days=6)
+
+    connection = sqlite3.connect(DB_PATH)
+    cursor = connection.cursor()
+    cursor.execute(
+        """
+        SELECT date, duration FROM training_history
+        WHERE date >= ? AND date <= ?
+        """,
+        (week_start.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d 23:59")),
+    )
+    rows = cursor.fetchall()
+    connection.close()
+
+    for date_str, duration_str in rows:
+        try:
+            # Parsujemy format "MM:SS" lub "N min"
+            if ":" in duration_str:
+                parts = duration_str.split(":")
+                minutes = int(parts[0]) + round(int(parts[1]) / 60)
+            elif "min" in duration_str:
+                minutes = int(duration_str.replace("min", "").strip())
+            else:
+                minutes = int(duration_str)
+
+            training_date = dt.datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+            day_index = training_date.weekday()  # 0=PON … 6=NIE
+            result[day_labels[day_index]] += minutes
+        except (ValueError, IndexError):
+            continue
+
+    return result
+
+
 def get_training_statistics():
     """Pobiera wszystkie rekordy posortowane od najnowszego treningu."""
     connection = sqlite3.connect(DB_PATH)

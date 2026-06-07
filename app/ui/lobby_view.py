@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QPainter, QFont
 from app.core.config import EXAMPLE_VIDEO
 from app.ui.base_view import BaseView
 from app.ui.skeleton_lobby_view import SkeletonLobbyView
+from app.db.database import get_weekly_training_minutes
 
 
 class LobbyView(BaseView):
@@ -158,30 +159,25 @@ class LobbyView(BaseView):
 
     def _create_weekly_chart(self) -> QChartView:
         """
-        Tworzy i konfiguruje wykres słupkowy przedstawiający tygodniową aktywność (minuty).
-        Wykres zawiera dane dla każdego dnia tygodnia, z dostosowanym stylem wizualnym.
-
-        Returns:
-            QChartView: Widok wykresu gotowy do wstawienia do layoutu.
+        Tworzy wykres słupkowy tygodniowej aktywności na podstawie danych z bazy.
+        Pobiera sumaryczny czas treningów (minuty) dla każdego dnia bieżącego tygodnia.
         """
         days = ["PON", "WT", "ŚR", "CZW", "PT", "SOB", "NIE"]
-        values = [110, 82, 55, 60, 75, 30, 40]
+        weekly_data = get_weekly_training_minutes()
+        values = [weekly_data[d] for d in days]
 
-        # Zestaw danych dla słupków
         bar_set = QBarSet("Aktywność (min)")
         for v in values:
             bar_set.append(v)
-            bar_set.setLabelColor(QColor("#000000"))
-            bar_set.setLabelFont(QFont("Arial", 9, QFont.Bold))
+        bar_set.setLabelColor(QColor("#000000"))
+        bar_set.setLabelFont(QFont("Arial", 9, QFont.Bold))
         bar_set.setColor(QColor("#CCFF00"))
 
-        # Seria słupkowa
         series = QBarSeries()
         series.append(bar_set)
         series.setBarWidth(0.7)
         series.setLabelsVisible(True)
 
-        # Główny obiekt wykresu
         chart = QChart()
         chart.addSeries(series)
         chart.setTitle("")
@@ -191,7 +187,6 @@ class LobbyView(BaseView):
         chart.setPlotAreaBackgroundVisible(True)
         chart.setMinimumHeight(200)
 
-        # Oś X (kategorie dni)
         axis_x = QBarCategoryAxis()
         axis_x.append(days)
         axis_x.setLabelsColor(QColor("#FFFFFF"))
@@ -199,9 +194,9 @@ class LobbyView(BaseView):
         chart.addAxis(axis_x, Qt.AlignBottom)
         series.attachAxis(axis_x)
 
-        # Oś Y (wartości w minutach)
         axis_y = QValueAxis()
-        axis_y.setRange(0, max(values) + 20)
+        max_val = max(values) if any(values) else 60
+        axis_y.setRange(0, max_val + 10)
         axis_y.setTitleText("min")
         axis_y.setTitleBrush(QColor("#FFFFFF"))
         axis_y.setTitleFont(QFont("Arial", 9, QFont.Bold))
@@ -214,7 +209,6 @@ class LobbyView(BaseView):
         chart.setBackgroundVisible(True)
         chart.setDropShadowEnabled(False)
 
-        # Widok wykresu z włączonym antyaliasingiem
         chart_view = QChartView(chart)
         chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
