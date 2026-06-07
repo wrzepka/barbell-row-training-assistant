@@ -20,10 +20,9 @@ class PoseCameraWidget(QWidget):
 
     landmarks_ready = Signal(object)
 
-    def __init__(self, camera_source, title_text):
+    def __init__(self, camera_source):
         """
         :param camera_source: Indeks kamery (np. 0, 1) lub adres URL strumienia.
-        :param title_text: Tekst wyświetlany nad podglądem wideo.
         """
         super().__init__()
         self.camera_source = camera_source
@@ -32,21 +31,17 @@ class PoseCameraWidget(QWidget):
         self._pose_worker: PoseWorker | None = None
         self._dying_workers = []
 
-        self._setup_ui(title_text)
+        self._setup_ui()
 
-    def _setup_ui(self, title_text):
+    def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-
-        self.title_label = QLabel(title_text)
-        self.title_label.setAlignment(Qt.AlignCenter)
 
         self.video_label = QLabel()
         self.video_label.setObjectName("cameraSlot")
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
 
-        layout.addWidget(self.title_label)
         layout.addWidget(self.video_label, stretch=1)
 
     def _show_frame(self, img: QImage):

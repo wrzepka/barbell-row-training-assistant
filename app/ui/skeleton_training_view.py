@@ -10,15 +10,20 @@ class SkeletonTrainingView(QWidget):
 
     def __init__(self):
         super().__init__()
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(10)
+        layout.setSpacing(20)
 
         # bloki dla kamer
-        cam_layout = QHBoxLayout()
+        cam_layout = QVBoxLayout()
+        cam_layout.setSpacing(15)
         cam_layout.addWidget(ShimmerBlock())
         cam_layout.addWidget(ShimmerBlock())
         layout.addLayout(cam_layout, stretch=6)
 
         # blok dla statystyk
-        layout.addWidget(ShimmerBlock(height=240))
+        panel_layout = QVBoxLayout()
+        panel_layout.setSpacing(15)
+        panel_layout.addWidget(ShimmerBlock(), stretch=4)
+        panel_layout.addWidget(ShimmerBlock(), stretch=6)
+        layout.addLayout(panel_layout, stretch=4)

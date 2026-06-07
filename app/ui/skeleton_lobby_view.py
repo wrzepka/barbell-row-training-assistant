@@ -26,7 +26,7 @@ class SkeletonLobbyView(QWidget):
         right_column_layout.setSpacing(20)
 
         # zawartość prawej kolumny
-        weekly_result_card = ShimmerBlock(height=525)
+        weekly_result_card = ShimmerBlock()
         right_column_layout.addWidget(weekly_result_card, stretch=6)
         last_training_card = ShimmerBlock()
         right_column_layout.addWidget(last_training_card, stretch=4)
