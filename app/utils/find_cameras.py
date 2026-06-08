@@ -5,7 +5,7 @@ def find_cameras(max_cameras=6):
     found = []
 
     for i in range(max_cameras):
-        cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+        cap = cv2.VideoCapture(i, cv2.CAP_ANY)
 
         if cap.isOpened():
             ok, frame = cap.read()

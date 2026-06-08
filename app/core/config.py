@@ -27,3 +27,6 @@ EXAMPLE_VIDEO = ASSETS_DIR / "training-example.mp4"
 # Ścieżki do audio
 TEMP_DIR = BASE_DIR / "temp"
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
+#debug mode
+DEBUG_MODE = False
