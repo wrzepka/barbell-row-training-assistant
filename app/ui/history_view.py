@@ -311,8 +311,8 @@ class HistoryView(BaseView):
         self.right_layout.setContentsMargins(10, 0, 10, 0)
         self.right_layout.setSpacing(25)
 
-        self.chart_widget = QWidget()
-        self.stats_widget = QWidget()
+        self.chart_widget = None
+        self.stats_widget = None
 
         self.refresh_ui()
 
@@ -344,13 +344,15 @@ class HistoryView(BaseView):
         for record in current_data:
             self.container_layout.addWidget(HistoryCard(record))
 
-        if hasattr(self, 'chart_widget') and self.chart_widget:
+        if self.chart_widget is not None:
             self.right_layout.removeWidget(self.chart_widget)
             self.chart_widget.deleteLater()
+            self.chart_widget = None
 
-        if hasattr(self, 'stats_widget') and self.stats_widget:
+        if self.stats_widget is not None:
             self.right_layout.removeWidget(self.stats_widget)
             self.stats_widget.deleteLater()
+            self.stats_widget = None
 
         chart_data_sorted = list(reversed(current_data))
 
@@ -367,3 +369,8 @@ class HistoryView(BaseView):
         layout = QVBoxLayout(self.content_page)
         layout.setContentsMargins(30, 25, 20, 25)
         layout.addWidget(self.main_content)
+
+    def showEvent(self, event):
+        """Odświeża dane za każdym razem gdy użytkownik przełączy się na tę zakładkę."""
+        super().showEvent(event)
+        self.refresh_ui()

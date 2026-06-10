@@ -11,6 +11,7 @@ from app.engine.analysis_worker import AnalysisWorker
 from app.ui.control_panel import ControlPanelWidget
 from app.db.database import add_training_entry
 from app.utils.find_cameras import find_cameras
+from app.core.config import DEBUG_MODE
 
 
 class TrainingView(BaseView):
@@ -65,6 +66,10 @@ class TrainingView(BaseView):
         self.control_panel.end_set_requested.connect(self._on_end_set)
         self.control_panel.end_training_requested.connect(self._on_end_training)
 
+        if DEBUG_MODE:
+            from app.ui.debug_panel import DebugPanel
+            self._debug_panel = DebugPanel(self._analysis_worker, self.control_panel, parent=self)
+
     # ── Layout ────────────────────────────────────────────────────────────────
 
     def _setup_layout(self):
@@ -86,6 +91,8 @@ class TrainingView(BaseView):
 
         side_layout.addWidget(self.stats_widget, stretch=0)
         side_layout.addWidget(self.control_panel, stretch=1)
+        if DEBUG_MODE:
+            side_layout.addWidget(self._debug_panel, stretch=0)
 
         main_layout.addWidget(side_panel, stretch=2)
 
