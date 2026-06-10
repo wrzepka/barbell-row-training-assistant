@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
             # ----- Komendy kończące trening / ćwiczenie -----
             end_training_phrases = [
                 "koniec ćwiczenia", "zakończ ćwiczenia","zakończ ćwiczenię","zakończ ćwiczenie",
-                "zakon ćwiczenia", "zakończenie", "zakończę ćwiczenia", "zakończyć ćwiczenia",
+                "zakon ćwiczenia", "zakończę ćwiczenia", "zakończyć ćwiczenia",
                 "koniec widzenia", "panie ćwiczenia", "zapasie ćwiczenia", "zakres ćwiczeń",
                 "zakończ przyjęcia", "tego ćwiczenia", "zapach ćwiczenia", "za jakąś ćwiczenia",
                 "zawarcie ćwiczenia", "jest ćwiczenia", "zakończ licencji", "zewsząd widzenia",
