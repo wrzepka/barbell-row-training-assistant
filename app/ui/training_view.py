@@ -166,9 +166,19 @@ class TrainingView(BaseView):
     # ── Cykl życia kamer ──────────────────────────────────────────────────────
 
     def showEvent(self, event):
+        """
+        Metoda uruchamia kamery przy zmianie widoku na ten, dzięki opóźnieniu SKELETON_MINIMAL_DELAY wszystko dzieje
+        się pod widokiem szkieletowym.
+        """
         super().showEvent(event)
+
         self.cam_side.start_camera()
-        QTimer.singleShot(500, self.cam_front.start_camera)
+        self.cam_front.start_camera()
+
+        self._data_loaded = True
+
+        if self._minimum_time_elapsed:
+            self.content_ready.emit()
 
     def hideEvent(self, event):
         super().hideEvent(event)

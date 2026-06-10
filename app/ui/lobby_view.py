@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis, QValueAxis
 from PySide6.QtGui import QColor, QPainter, QFont
 
+from app.const import Screen
 from app.core.config import EXAMPLE_VIDEO
 from app.ui.base_view import BaseView
 from app.ui.skeleton_lobby_view import SkeletonLobbyView
@@ -259,20 +260,24 @@ class LobbyView(BaseView):
     def showEvent(self, event):
         """Odświeża wykres tygodniowy przy każdym wejściu na stronę lobby."""
         super().showEvent(event)
+
         # Usuń stary chart_view i wstaw nowy z aktualnymi danymi z bazy
         self.weekly_layout.removeWidget(self.chart_view)
         self.chart_view.deleteLater()
         self.chart_view = self._create_weekly_chart()
         self.weekly_layout.addWidget(self.chart_view)
 
+        self._data_loaded = True
+
+        if self._minimum_time_elapsed:
+            self.content_ready.emit()
+
     def _on_view_details(self):
         """
         Slot wywoływany po kliknięciu przycisku "ZOBACZ SZCZEGÓŁY".
-        Przełącza stronę na widok szczegółów treningu (indeks 2).
+        Przełącza stronę na widok szczegółów treningu.
         """
-        main_window = self.window()
-        if hasattr(main_window, 'switch_page'):
-            main_window.switch_page(2)
+        self.change_page_requested.emit(Screen.HISTORY)
 
     def _setup_example_video_player(self, layout, video_path):
         """
