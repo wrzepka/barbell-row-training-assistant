@@ -48,11 +48,11 @@ class TrainingView(BaseView):
     def _create_widgets(self):
         camera_indexes = find_cameras()
 
-        # if len(camera_indexes) < 2:
-        #     raise RuntimeError("Wymagane są 2 kamery.")
+        if len(camera_indexes) < 2:
+            raise RuntimeError("Wymagane są 2 kamery.")
 
-        side_idx = 0
-        front_idx = 0
+        side_idx = camera_indexes[0]
+        front_idx = camera_indexes[1]
 
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
@@ -182,10 +182,10 @@ class TrainingView(BaseView):
 
     def hideEvent(self, event):
         super().hideEvent(event)
-        # self.cam_side.stop_camera()
+        self.cam_side.stop_camera()
         self.cam_front.stop_camera()
 
     def closeEvent(self, event):
-        # self.cam_side.stop_camera()
+        self.cam_side.stop_camera()
         self.cam_front.stop_camera()
         super().closeEvent(event)
