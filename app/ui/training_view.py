@@ -48,11 +48,11 @@ class TrainingView(BaseView):
     def _create_widgets(self):
         camera_indexes = find_cameras()
 
-        if len(camera_indexes) < 2:
-            raise RuntimeError("Wymagane są 2 kamery.")
+        # if len(camera_indexes) < 2:
+        #     raise RuntimeError("Wymagane są 2 kamery.")
 
-        side_idx = camera_indexes[0]
-        front_idx = camera_indexes[1]
+        side_idx = 0
+        front_idx = 0
 
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
@@ -166,16 +166,26 @@ class TrainingView(BaseView):
     # ── Cykl życia kamer ──────────────────────────────────────────────────────
 
     def showEvent(self, event):
+        """
+        Metoda uruchamia kamery przy zmianie widoku na ten, dzięki opóźnieniu SKELETON_MINIMAL_DELAY wszystko dzieje
+        się pod widokiem szkieletowym.
+        """
         super().showEvent(event)
+
         self.cam_side.start_camera()
-        QTimer.singleShot(500, self.cam_front.start_camera)
+        self.cam_front.start_camera()
+
+        self._data_loaded = True
+
+        if self._minimum_time_elapsed:
+            self.content_ready.emit()
 
     def hideEvent(self, event):
         super().hideEvent(event)
-        self.cam_side.stop_camera()
+        # self.cam_side.stop_camera()
         self.cam_front.stop_camera()
 
     def closeEvent(self, event):
-        self.cam_side.stop_camera()
+        # self.cam_side.stop_camera()
         self.cam_front.stop_camera()
         super().closeEvent(event)

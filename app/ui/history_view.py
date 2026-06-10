@@ -373,4 +373,10 @@ class HistoryView(BaseView):
     def showEvent(self, event):
         """Odświeża dane za każdym razem gdy użytkownik przełączy się na tę zakładkę."""
         super().showEvent(event)
+
         self.refresh_ui()
+
+        self._data_loaded = True
+
+        if self._minimum_time_elapsed:
+            self.content_ready.emit()
