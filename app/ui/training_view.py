@@ -189,3 +189,13 @@ class TrainingView(BaseView):
         self.cam_side.stop_camera()
         self.cam_front.stop_camera()
         super().closeEvent(event)
+
+# ── Publiczne metody do sterowania głosowego ────
+
+    def end_set(self):
+        """Kończy aktualną serię (wywołane głosowo)."""
+        self._on_end_set()
+
+    def end_training(self):
+        """Kończy cały trening (wywołane głosowo)."""
+        self._on_end_training()

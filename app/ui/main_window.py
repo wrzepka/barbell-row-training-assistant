@@ -115,10 +115,43 @@ class MainWindow(QMainWindow):
         """
         print(f"[{text}]")
 
-        training_list = ["trening", "terenie", "trendy", "rynek", "premier", "technik", "trend", "teren"]
-        history_list = ["historia", "historie", "zdrowia", "historię"]
-        lobby_list = ["lobby", "po lody", "loty", "lampki", "lotu", "lody", "robi", "logiki", "roku", "nowy", "lobbing",
-                      "nogi", "lubi", "lampy", "login", "lori", "wątpię", "lot", "start", "stan"]
+
+        current_view = self.stacked_widget.currentWidget()
+
+        if isinstance(current_view, TrainingView):
+            # ----- Komendy kończące serię (wiele wariantów) -----
+            end_set_phrases = [
+                "koniec serii", "zakończ serię", "zakończ serio", "zakon seria",
+                "zakon zakończ serię", "zakończy serię", "zakończ serię", "zakonnicy serio",
+                "za serii jest", "zakon serio", "bądź serio", "zakład seria", "się serio",
+                "sami", "dzwonię z serii", "taniec"
+            ]
+            if any(phrase in text.lower().strip() for phrase in end_set_phrases):
+                current_view.end_set()
+                self.voice_manager.speak("Seria zakończona")
+                return
+
+            # ----- Komendy kończące trening / ćwiczenie -----
+            end_training_phrases = [
+                "koniec ćwiczenia", "zakończ ćwiczenia","zakończ ćwiczenię","zakończ ćwiczenie",
+                "zakon ćwiczenia", "zakończę ćwiczenia", "zakończyć ćwiczenia",
+                "koniec widzenia", "panie ćwiczenia", "zapasie ćwiczenia", "zakres ćwiczeń",
+                "zakończ przyjęcia", "tego ćwiczenia", "zapach ćwiczenia", "za jakąś ćwiczenia",
+                "zawarcie ćwiczenia", "jest ćwiczenia", "zakończ licencji", "zewsząd widzenia",
+                "zaparcia", "zawartość widzenia", "zapal świecę", "zawodnik ćwiczenia",
+                "zakład ćwiczenia", "zakończ świecie", "zawarcie czasie", "zawarcie pisania",
+                "za chęci wzięcia", "bądź większe", "za jakąś zieleni", "na koniec ćwiczenia",
+                "zaletą cięcia", "za jakąś widzę", "zerwałem świecie", "jako świecie", "zagoić więcej"
+            ]
+            if any(phrase in text.lower().strip() for phrase in end_training_phrases):
+                current_view.end_training()
+                self.voice_manager.speak("Trening zakończony")
+                return
+
+        training_list = ["trening","terenie","trendy","rynek","premier","technik","trend","teren"]
+        history_list =["historia","historie","zdrowia","historię"]
+        lobby_list = ["lobby","po lody","loty","lampki","lotu","lody","robi","logiki","roku","nowy","lobbing","nogi","lubi","lampy","login","lori","wątpię","lot","start","stan"]
+
         if any(word in text.lower() for word in training_list):
             self.page_switch_requested.emit(Screen.TRAINING)
             self.voice_manager.speak("Przechodzę do treningu.")
