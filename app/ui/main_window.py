@@ -1,6 +1,7 @@
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QStackedWidget
 
+from app.const import LOADING_SCREEN_MINIMAL_DELAY, Screen
 from app.core.config import LOGO_WITHOUT_BG, LOGO_ICON
 from app.ui.navbar import Navbar
 from app.ui.lobby_view import LobbyView
@@ -10,12 +11,14 @@ from PySide6.QtCore import Qt, Signal, QTimer
 
 from app.core.voice_manager import VoiceManager
 
+
 class MainWindow(QMainWindow):
     """
     Główne okno aplikacji zarządzające nawigacją i wyświetlaniem poszczególnych modułów.
     """
 
     initialization_complete = Signal()
+    page_switch_requested = Signal(int)
 
     def __init__(self):
         super().__init__()
@@ -24,10 +27,7 @@ class MainWindow(QMainWindow):
         self._create_widgets()
         self._setup_layout()
         self._connect_signals()
-
-        # start modeli - z 300 ms opóźnienia, aby umożliwić narysowanie loading screenu.
-        QTimer.singleShot(300, self._init_voice_manager)
-
+        self._start_initialization_timer()
 
     def _setup_window_settings(self):
         """
@@ -49,11 +49,17 @@ class MainWindow(QMainWindow):
         """
         self.navbar = Navbar(LOGO_WITHOUT_BG)
 
-        # Menadżer ekranów i dodawanie widoków
         self.stacked_widget = QStackedWidget()
-        self.stacked_widget.addWidget(LobbyView())  # 0
-        self.stacked_widget.addWidget(TrainingView())  # 1
-        self.stacked_widget.addWidget(HistoryView())  # 2
+
+        self.views = [
+            LobbyView(),
+            TrainingView(),
+            HistoryView()
+        ]
+
+        for view in self.views:
+            self.stacked_widget.addWidget(view)
+            view.change_page_requested.connect(self.page_switch_requested.emit)
 
     def _setup_layout(self):
         """
@@ -71,7 +77,8 @@ class MainWindow(QMainWindow):
         """
         Rejestruje połączenia między sygnałami komponentów a ich działaniem (Slotami).
         """
-        self.navbar.button_clicked.connect(self.switch_page)
+        self.navbar.button_clicked.connect(self.page_switch_requested.emit)
+        self.page_switch_requested.connect(self.switch_page)
 
     def switch_page(self, index):
         """
@@ -90,13 +97,24 @@ class MainWindow(QMainWindow):
         self.voice_manager.command_recognized.connect(self._handle_voice_commands)
 
         self.voice_manager.speak("System gotowy do działania.")
-        self.initialization_complete.emit() # emisja sygnału, oznaczającego koniec ładowania modeli.
+        self.initialization_complete.emit()
+
+    def _start_initialization_timer(self):
+        """
+        Uruchamia opóźniony start modeli AI i menedżera głosu,
+        dając systemowi czas na poprawne wyrenderowanie ekranu ładowania.
+        """
+        self._init_timer = QTimer(self)
+        self._init_timer.setSingleShot(True)
+        self._init_timer.timeout.connect(self._init_voice_manager)
+        self._init_timer.start(LOADING_SCREEN_MINIMAL_DELAY)
 
     def _handle_voice_commands(self, text: str):
         """
         Tutaj trafia rozpoznany tekst z mikrofonu.
         """
         print(f"[{text}]")
+
 
         current_view = self.stacked_widget.currentWidget()
 
@@ -133,14 +151,15 @@ class MainWindow(QMainWindow):
         training_list = ["trening","terenie","trendy","rynek","premier","technik","trend","teren"]
         history_list =["historia","historie","zdrowia","historię"]
         lobby_list = ["lobby","po lody","loty","lampki","lotu","lody","robi","logiki","roku","nowy","lobbing","nogi","lubi","lampy","login","lori","wątpię","lot","start","stan"]
+
         if any(word in text.lower() for word in training_list):
-            self.switch_page(1)  #przełącza na trening
+            self.page_switch_requested.emit(Screen.TRAINING)
             self.voice_manager.speak("Przechodzę do treningu.")
         elif any(word in text.lower() for word in history_list):
-            self.switch_page(2)  #przełącza na historie
+            self.page_switch_requested.emit(Screen.HISTORY)
             self.voice_manager.speak("Oto twoja historia treningów.")
         elif any(word in text.lower() for word in lobby_list):
-            self.switch_page(0) #przełąccza na start
+            self.page_switch_requested.emit(Screen.LOBBY)
             self.voice_manager.speak("Przechodzę na stronę startową")
 
     def closeEvent(self, event):
