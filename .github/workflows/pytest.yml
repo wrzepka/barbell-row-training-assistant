@@ -1,6 +1,6 @@
-# This workflow will install Python dependencies and run tests with Python 3.12
+# This workflow will install Python dependencies and run tests with Python 3.12 using GitHub-hosted runners
 
-name: PyTest
+name: Python application
 
 on:
   push:
@@ -13,7 +13,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: [self-hosted, windows]
+
+    # ZMIANA: Zamiast self-hosted, prosimy GitHub o ich maszynę z Windowsem
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -27,7 +29,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest
-        # Składnia dostosowana do Windows PowerShell
+        # Składnia PowerShell dla maszyn Windows na GitHubie
         if (Test-Path requirements.txt) { pip install -r requirements.txt }
         
     - name: Test with pytest
