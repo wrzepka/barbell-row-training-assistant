@@ -13,8 +13,6 @@ permissions:
 
 jobs:
   build:
-
-    # ZMIANA: Zamiast self-hosted, prosimy GitHub o ich maszynę z Windowsem
     runs-on: windows-latest
 
     steps:
