@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget
 )
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QDateTime
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
@@ -12,7 +12,8 @@ from app.ui.control_panel import ControlPanelWidget
 from app.db.database import add_training_entry
 from app.utils.find_cameras import find_cameras
 from app.core.config import DEBUG_MODE
-
+from app.workers.tts_worker import TTSWorker
+from app.core.voice_manager import VoiceManager
 
 class TrainingView(BaseView):
     """
@@ -30,7 +31,7 @@ class TrainingView(BaseView):
                                           ↓
                                    TrainingView (spaja wszystko w całość)
     """
-
+    ERROR_COOLDOWN_MS = 10000 #10 sekund cooldown
     def __init__(self):
         super().__init__(SkeletonTrainingView, "trainingView")
 
@@ -38,6 +39,10 @@ class TrainingView(BaseView):
 
         self._sets: list[dict] = []
         self._current_reps: int = 0
+
+        self.voice_manager = VoiceManager(parent=self)
+        self._active_errors = set()
+        self._last_error_play_time = {}
 
         self._create_widgets()
         self._setup_layout()
@@ -54,10 +59,11 @@ class TrainingView(BaseView):
         side_idx = camera_indexes[0]
         front_idx = camera_indexes[1]
 
+
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
         self.cam_side = PoseCameraWidget(side_idx)
-        self.cam_front = PoseCameraWidget(front_idx,)
+        self.cam_front = PoseCameraWidget(front_idx)
 
         self.stats_widget = StatsWidget()
         self.stats_widget.reset_btn.clicked.connect(self._on_reset_set)
@@ -105,8 +111,32 @@ class TrainingView(BaseView):
         self._analysis_worker.stats_updated.connect(self._on_stats_updated)
         self._analysis_worker.rep_completed.connect(self._on_rep_completed)
 
+    def _play_error_message(self, error_code: str):
+        messages = {
+            "ROUNDED_BACK": "Masz zaokrąglone plecy, ściągnij łopatki.",
+            "SWINGING": "Nie bujaj tułowiem, ustabilizuj sylwetkę.",
+            "ELBOW_FLARE": "Łokcie idą za szeroko, trzymaj je bliżej ciała."
+        }
+
+        text = messages.get(error_code)
+        if text:
+            self.voice_manager.speak(text)
+
     def _on_stats_updated(self, result):
         self._current_reps = result.reps
+        current_error_codes = {e.code for e in result.errors}
+        now = QDateTime.currentMSecsSinceEpoch()
+
+
+        new_errors = current_error_codes - self._active_errors
+
+        for error_code in new_errors:
+            last_time = self._last_error_play_time.get(error_code, 0)
+            if now - last_time >= self.ERROR_COOLDOWN_MS:
+                self._play_error_message(error_code)
+                self._last_error_play_time[error_code] = now  # aktualizacja czasu
+
+        self._active_errors = current_error_codes
 
     def _on_rep_completed(self, reps: int):
         if reps == 1:
@@ -131,6 +161,8 @@ class TrainingView(BaseView):
         self.control_panel.pause_timer()
         self._analysis_worker.reset()
         self._current_reps = 0
+        self._active_errors.clear()
+        self._last_error_play_time.clear()
 
     def _on_end_training(self):
         if self._current_reps > 0:
@@ -158,10 +190,13 @@ class TrainingView(BaseView):
         self._current_reps = 0
         self.control_panel.reset_panel()
         self._analysis_worker.reset()
+        self._last_error_play_time.clear()
 
     def _on_reset_set(self):
         self._analysis_worker.reset()
         self._current_reps = 0
+        self._active_errors.clear()
+        self._last_error_play_time.clear()
 
     # ── Cykl życia kamer ──────────────────────────────────────────────────────
 
