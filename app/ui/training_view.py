@@ -12,7 +12,7 @@ from app.ui.control_panel import ControlPanelWidget
 from app.db.database import add_training_entry
 from app.utils.find_cameras import find_cameras
 from app.core.config import DEBUG_MODE
-from app.const import ERROR_COOLDOWN_MS
+from app.const import ERROR_COOLDOWN_MS, ERROR_WEIGHTS
 from app.core.voice_manager import VoiceManager
 
 class TrainingView(BaseView):
@@ -38,7 +38,7 @@ class TrainingView(BaseView):
 
         self._sets: list[dict] = []
         self._current_reps: int = 0
-        self._current_errors: int = 0
+        self._current_errors: float = 0.0
 
         self.voice_manager = VoiceManager(parent=self)
         self._active_errors = set()
@@ -135,7 +135,9 @@ class TrainingView(BaseView):
             if now - last_time >= ERROR_COOLDOWN_MS:
                 self._play_error_message(error_code)
                 self._last_error_play_time[error_code] = now  # aktualizacja czasu
-                self._current_errors += 1
+
+                error_weight = ERROR_WEIGHTS.get(error_code, 1.0)
+                self._current_errors += error_weight
 
         self._active_errors = current_error_codes
 
