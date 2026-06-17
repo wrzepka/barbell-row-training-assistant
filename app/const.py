@@ -10,6 +10,7 @@ class Screen(IntEnum):
     TRAINING = 1
     HISTORY = 2
 
+
 class ScreenModes(IntEnum):
     """
     Enumerator z identyfikatorami trybów każdego z widoków QStackedWidget.
@@ -19,6 +20,17 @@ class ScreenModes(IntEnum):
     SKELETON = 0
     REAL = 1
 
+
 # Minimalna długość ładowania widoku szkieletowego i loading screenu
-SKELETON_MINIMAL_DELAY = 400 # 400ms to optymalna długość, aby ludzkie oko zarejestrowało szkielet.
+SKELETON_MINIMAL_DELAY = 400  # 400ms to optymalna długość, aby ludzkie oko zarejestrowało szkielet.
 LOADING_SCREEN_MINIMAL_DELAY = 200
+
+# Cooldown między ponownym uruchamianiem komunikatu głosowego, dotyczącego błędu.
+ERROR_COOLDOWN_MS = 10000
+
+# Error weights
+ERROR_WEIGHTS = {
+    "ROUNDED_BACK": 3.0,
+    "SWINGING": 2.0,
+    "ELBOW_FLARE": 1.0
+}

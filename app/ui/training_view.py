@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget
 )
-from PySide6.QtCore import QTimer, QDateTime
+from PySide6.QtCore import QDateTime
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
@@ -12,7 +12,7 @@ from app.ui.control_panel import ControlPanelWidget
 from app.db.database import add_training_entry
 from app.utils.find_cameras import find_cameras
 from app.core.config import DEBUG_MODE
-from app.workers.tts_worker import TTSWorker
+from app.const import ERROR_COOLDOWN_MS, ERROR_WEIGHTS
 from app.core.voice_manager import VoiceManager
 
 class TrainingView(BaseView):
@@ -31,7 +31,6 @@ class TrainingView(BaseView):
                                           ↓
                                    TrainingView (spaja wszystko w całość)
     """
-    ERROR_COOLDOWN_MS = 10000 #10 sekund cooldown
     def __init__(self):
         super().__init__(SkeletonTrainingView, "trainingView")
 
@@ -39,6 +38,7 @@ class TrainingView(BaseView):
 
         self._sets: list[dict] = []
         self._current_reps: int = 0
+        self._current_errors: float = 0.0
 
         self.voice_manager = VoiceManager(parent=self)
         self._active_errors = set()
@@ -132,9 +132,12 @@ class TrainingView(BaseView):
 
         for error_code in new_errors:
             last_time = self._last_error_play_time.get(error_code, 0)
-            if now - last_time >= self.ERROR_COOLDOWN_MS:
+            if now - last_time >= ERROR_COOLDOWN_MS:
                 self._play_error_message(error_code)
                 self._last_error_play_time[error_code] = now  # aktualizacja czasu
+
+                error_weight = ERROR_WEIGHTS.get(error_code, 1.0)
+                self._current_errors += error_weight
 
         self._active_errors = current_error_codes
 
@@ -153,6 +156,7 @@ class TrainingView(BaseView):
             "set_nr": set_nr,
             "reps": self._current_reps,
             "weight": weight,
+            "penalty_points": self._current_errors
         })
 
         # Przekazanie wizualizacji do panelu
@@ -161,8 +165,30 @@ class TrainingView(BaseView):
         self.control_panel.pause_timer()
         self._analysis_worker.reset()
         self._current_reps = 0
+        self._current_errors = 0.0
         self._active_errors.clear()
         self._last_error_play_time.clear()
+
+    def _calculate_score(self, total_reps: int, total_penalty: float, total_sets: int) -> int:
+        """
+        Oblicza wydajność treningu uwzględniając wagi poszczególnych błędów.
+        """
+        if total_reps == 0:
+            return 0
+
+        base_score = 100.0
+
+        # Współczynnik kary = (suma punktów karnych / ilość powtórzeń)
+        # penalty_score zależy od wagi błędu (jest to zapisane w const.py)
+        penalty_ratio = total_penalty / total_reps
+        penalty_score = penalty_ratio * 15.0
+
+        # Bonus za wytrzymałość - max 10.0
+        volume_bonus = min(10.0, total_sets * 2.0)
+
+        score = base_score - penalty_score + volume_bonus
+
+        return max(0, min(100, int(round(score))))
 
     def _on_end_training(self):
         if self._current_reps > 0:
@@ -175,6 +201,9 @@ class TrainingView(BaseView):
         total_sets = len(self._sets)
         total_volume = sum(s["reps"] * s["weight"] for s in self._sets)
 
+        total_penalty = sum(s.get("penalty_points", 0.0) for s in self._sets)
+        calculated_score = self._calculate_score(total_reps, total_penalty, total_sets)
+
         # Pobieramy czas z panelu
         seconds = self.control_panel.elapsed_seconds
         duration_str = ControlPanelWidget.format_time(seconds)
@@ -183,11 +212,12 @@ class TrainingView(BaseView):
 
         add_training_entry(
             weight=total_volume, reps=total_reps, sets=total_sets,
-            duration=duration_str, score=80, to_fix_list=[], sets_detail=sets_detail
+            duration=duration_str, score=calculated_score, to_fix_list=[], sets_detail=sets_detail
         )
 
         self._sets.clear()
         self._current_reps = 0
+        self._current_errors = 0.0
         self.control_panel.reset_panel()
         self._analysis_worker.reset()
         self._last_error_play_time.clear()
@@ -195,6 +225,7 @@ class TrainingView(BaseView):
     def _on_reset_set(self):
         self._analysis_worker.reset()
         self._current_reps = 0
+        self._current_errors = 0.0
         self._active_errors.clear()
         self._last_error_play_time.clear()
 
