@@ -38,6 +38,7 @@ class TrainingView(BaseView):
 
         self._sets: list[dict] = []
         self._current_reps: int = 0
+        self._current_errors: int = 0
 
         self.voice_manager = VoiceManager(parent=self)
         self._active_errors = set()
@@ -134,6 +135,7 @@ class TrainingView(BaseView):
             if now - last_time >= ERROR_COOLDOWN_MS:
                 self._play_error_message(error_code)
                 self._last_error_play_time[error_code] = now  # aktualizacja czasu
+                self._current_errors += 1
 
         self._active_errors = current_error_codes
 
@@ -152,6 +154,7 @@ class TrainingView(BaseView):
             "set_nr": set_nr,
             "reps": self._current_reps,
             "weight": weight,
+            "errors": self._current_errors
         })
 
         # Przekazanie wizualizacji do panelu
@@ -160,6 +163,7 @@ class TrainingView(BaseView):
         self.control_panel.pause_timer()
         self._analysis_worker.reset()
         self._current_reps = 0
+        self._current_errors = 0
         self._active_errors.clear()
         self._last_error_play_time.clear()
 
@@ -187,6 +191,7 @@ class TrainingView(BaseView):
 
         self._sets.clear()
         self._current_reps = 0
+        self._current_errors = 0
         self.control_panel.reset_panel()
         self._analysis_worker.reset()
         self._last_error_play_time.clear()
@@ -194,6 +199,7 @@ class TrainingView(BaseView):
     def _on_reset_set(self):
         self._analysis_worker.reset()
         self._current_reps = 0
+        self._current_errors = 0
         self._active_errors.clear()
         self._last_error_play_time.clear()
 
