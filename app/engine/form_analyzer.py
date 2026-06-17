@@ -11,7 +11,10 @@ Dostosowany do opisu:
 from __future__ import annotations
 from dataclasses import dataclass
 from collections import deque
+import logging
 import math
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -141,25 +144,39 @@ class SideFormAnalyzer:
 class FrontFormAnalyzer:
     """
     Błędy z przodu:
-    - Flaring łokci (kąt bark–łokieć–nadgarstek > 60°)
-      Sprawdzane TYLKO gdy nadgarstki są w górnej połowie zakresu ruchu,
-      bo przy opuszczonych rękach projekcja 2D daje fałszywie duże kąty
-      (łokieć schowany za tułowiem).
-    """
-    ELBOW_FLARE_THRESHOLD = 60.0
-    # Nadgarstek musi być powyżej tej frakcji odległości biodro→bark
-    # żeby pomiar był wiarygodny (0.25 = dolna ćwiartka zakresu)
-    WRIST_ACTIVE_RATIO = 0.25
+    - Flaring łokci: kąt ODWIEDZENIA ramienia od tułowia, mierzony w barku
+      między biodrem a łokciem (hip–shoulder–elbow). Im większy kąt, tym
+      bardziej łokieć odstaje od ciała na boki.
 
-    def __init__(self):
-        self._flare_l_flag = _SmoothFlag(window=8)
-        self._flare_r_flag = _SmoothFlag(window=8)
+      Uwaga: to NIE jest kąt zgięcia w łokciu (shoulder-elbow-wrist).
+      Ten ostatni mierzy, jak bardzo ugięte jest przedramię, a nie jak
+      daleko ramię odstaje od tułowia – dlatego poprzednia wersja fałszywie
+      reagowała na naturalne zgięcie łokcia przy prawidłowej technice i
+      była bardzo czuła na drobne ruchy nadgarstka.
+
+      Sprawdzane TYLKO gdy nadgarstki są w górnej połowie zakresu ruchu
+      (aktywna faza ciągnięcia), żeby nie łapać przypadkowych pozycji
+      między powtórzeniami.
+    """
+
+    def __init__(
+        self,
+        elbow_flare_threshold: float = 55.0,   # stopnie odwiedzenia – dostosuj po kalibracji
+        wrist_active_ratio:    float = 0.25,   # 0.25 = dolna ćwiartka zakresu ruchu
+        smoothing_window:      int   = 10,
+        debug:                  bool = False,
+    ):
+        self.elbow_flare_threshold = elbow_flare_threshold
+        self.wrist_active_ratio    = wrist_active_ratio
+        self.debug                 = debug
+        self._flare_l_flag = _SmoothFlag(window=smoothing_window)
+        self._flare_r_flag = _SmoothFlag(window=smoothing_window)
 
     def analyze(self, landmarks) -> list[FormError]:
         errors = []
         lm = landmarks
         try:
-            # Sprawdź czy nadgarstki są wystarczająco wysoko
+            # Sprawdź czy nadgarstki są wystarczająco wysoko (faza aktywna)
             r_hip_y      = lm[_R_HIP].y
             r_shoulder_y = lm[_R_SHOULDER].y
             r_wrist_y    = lm[_R_WRIST].y
@@ -169,18 +186,24 @@ class FrontFormAnalyzer:
                 return errors
 
             r_ratio = (r_hip_y - r_wrist_y) / r_dist
-            wrists_active = r_ratio >= self.WRIST_ACTIVE_RATIO
+            wrists_active = r_ratio >= self.wrist_active_ratio
 
-            angle_l = _angle_3pts(lm[_L_SHOULDER], lm[_L_ELBOW], lm[_L_WRIST])
-            angle_r = _angle_3pts(lm[_R_SHOULDER], lm[_R_ELBOW], lm[_R_WRIST])
+            # Kąt odwiedzenia ramienia: hip -> shoulder -> elbow
+            abduction_l = _angle_3pts(lm[_L_HIP], lm[_L_SHOULDER], lm[_L_ELBOW])
+            abduction_r = _angle_3pts(lm[_R_HIP], lm[_R_SHOULDER], lm[_R_ELBOW])
 
-            # Oceniaj flare tylko gdy jesteśmy w ruchu (nadgarstki w górze)
-            flare_l = wrists_active and angle_l > self.ELBOW_FLARE_THRESHOLD
-            flare_r = wrists_active and angle_r > self.ELBOW_FLARE_THRESHOLD
+            flare_l = wrists_active and abduction_l > self.elbow_flare_threshold
+            flare_r = wrists_active and abduction_r > self.elbow_flare_threshold
+
+            if self.debug:
+                logger.debug(
+                    "abd_l=%.1f°  abd_r=%.1f°  active=%s",
+                    abduction_l, abduction_r, wrists_active,
+                )
 
             if self._flare_l_flag.update(flare_l) or self._flare_r_flag.update(flare_r):
-                worst = max(angle_l, angle_r)
-                severity = min(1.0, (worst - self.ELBOW_FLARE_THRESHOLD) / 30.0)
+                worst = max(abduction_l, abduction_r)
+                severity = min(1.0, (worst - self.elbow_flare_threshold) / 25.0)
                 errors.append(FormError("ELBOW_FLARE",
                                         "Łokcie za szeroko! Prowadź je blisko ciała.", severity))
         except (IndexError, AttributeError):
