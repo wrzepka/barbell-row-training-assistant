@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget
 )
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QDateTime
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
@@ -31,7 +31,7 @@ class TrainingView(BaseView):
                                           ↓
                                    TrainingView (spaja wszystko w całość)
     """
-
+    ERROR_COOLDOWN_MS = 10000 #10 sekund cooldown
     def __init__(self):
         super().__init__(SkeletonTrainingView, "trainingView")
 
@@ -42,6 +42,7 @@ class TrainingView(BaseView):
 
         self.voice_manager = VoiceManager(parent=self)
         self._active_errors = set()
+        self._last_error_play_time = {}
 
         self._create_widgets()
         self._setup_layout()
@@ -57,6 +58,7 @@ class TrainingView(BaseView):
 
         side_idx = camera_indexes[0]
         front_idx = camera_indexes[1]
+
 
         print(f"[DEBUG] Inicjalizacja kamer: Bok={side_idx}, Przód={front_idx}")
 
@@ -115,6 +117,7 @@ class TrainingView(BaseView):
             "SWINGING": "Nie bujaj tułowiem, ustabilizuj sylwetkę.",
             "ELBOW_FLARE": "Łokcie idą za szeroko, trzymaj je bliżej ciała."
         }
+
         text = messages.get(error_code)
         if text:
             self.voice_manager.speak(text)
@@ -122,13 +125,16 @@ class TrainingView(BaseView):
     def _on_stats_updated(self, result):
         self._current_reps = result.reps
         current_error_codes = {e.code for e in result.errors}
+        now = QDateTime.currentMSecsSinceEpoch()
 
 
         new_errors = current_error_codes - self._active_errors
 
-
         for error_code in new_errors:
-            self._play_error_message(error_code)
+            last_time = self._last_error_play_time.get(error_code, 0)
+            if now - last_time >= self.ERROR_COOLDOWN_MS:
+                self._play_error_message(error_code)
+                self._last_error_play_time[error_code] = now  # aktualizacja czasu
 
         self._active_errors = current_error_codes
 
@@ -156,6 +162,7 @@ class TrainingView(BaseView):
         self._analysis_worker.reset()
         self._current_reps = 0
         self._active_errors.clear()
+        self._last_error_play_time.clear()
 
     def _on_end_training(self):
         if self._current_reps > 0:
@@ -183,11 +190,13 @@ class TrainingView(BaseView):
         self._current_reps = 0
         self.control_panel.reset_panel()
         self._analysis_worker.reset()
+        self._last_error_play_time.clear()
 
     def _on_reset_set(self):
         self._analysis_worker.reset()
         self._current_reps = 0
         self._active_errors.clear()
+        self._last_error_play_time.clear()
 
     # ── Cykl życia kamer ──────────────────────────────────────────────────────
 
