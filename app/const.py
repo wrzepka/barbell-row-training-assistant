@@ -22,3 +22,6 @@ class ScreenModes(IntEnum):
 # Minimalna długość ładowania widoku szkieletowego i loading screenu
 SKELETON_MINIMAL_DELAY = 400 # 400ms to optymalna długość, aby ludzkie oko zarejestrowało szkielet.
 LOADING_SCREEN_MINIMAL_DELAY = 200
+
+# Cooldown między ponownym uruchamianiem komunikatu głosowego, dotyczącego błędu.
+ERROR_COOLDOWN_MS = 10000

@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget
 )
-from PySide6.QtCore import QTimer, QDateTime
+from PySide6.QtCore import QDateTime
 
 from app.ui.base_view import BaseView
 from app.ui.pose_camera import PoseCameraWidget
@@ -12,7 +12,7 @@ from app.ui.control_panel import ControlPanelWidget
 from app.db.database import add_training_entry
 from app.utils.find_cameras import find_cameras
 from app.core.config import DEBUG_MODE
-from app.workers.tts_worker import TTSWorker
+from app.const import ERROR_COOLDOWN_MS
 from app.core.voice_manager import VoiceManager
 
 class TrainingView(BaseView):
@@ -31,7 +31,6 @@ class TrainingView(BaseView):
                                           ↓
                                    TrainingView (spaja wszystko w całość)
     """
-    ERROR_COOLDOWN_MS = 10000 #10 sekund cooldown
     def __init__(self):
         super().__init__(SkeletonTrainingView, "trainingView")
 
@@ -132,7 +131,7 @@ class TrainingView(BaseView):
 
         for error_code in new_errors:
             last_time = self._last_error_play_time.get(error_code, 0)
-            if now - last_time >= self.ERROR_COOLDOWN_MS:
+            if now - last_time >= ERROR_COOLDOWN_MS:
                 self._play_error_message(error_code)
                 self._last_error_play_time[error_code] = now  # aktualizacja czasu
 
