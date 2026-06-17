@@ -156,7 +156,7 @@ class TrainingView(BaseView):
             "set_nr": set_nr,
             "reps": self._current_reps,
             "weight": weight,
-            "errors": self._current_errors
+            "penalty_points": self._current_errors
         })
 
         # Przekazanie wizualizacji do panelu
@@ -165,9 +165,30 @@ class TrainingView(BaseView):
         self.control_panel.pause_timer()
         self._analysis_worker.reset()
         self._current_reps = 0
-        self._current_errors = 0
+        self._current_errors = 0.0
         self._active_errors.clear()
         self._last_error_play_time.clear()
+
+    def _calculate_score(self, total_reps: int, total_penalty: float, total_sets: int) -> int:
+        """
+        Oblicza wydajność treningu uwzględniając wagi poszczególnych błędów.
+        """
+        if total_reps == 0:
+            return 0
+
+        base_score = 100.0
+
+        # Współczynnik kary = (suma punktów karnych / ilość powtórzeń)
+        # penalty_score zależy od wagi błędu (jest to zapisane w const.py)
+        penalty_ratio = total_penalty / total_reps
+        penalty_score = penalty_ratio * 15.0
+
+        # Bonus za wytrzymałość - max 10.0
+        volume_bonus = min(10.0, total_sets * 2.0)
+
+        score = base_score - penalty_score + volume_bonus
+
+        return max(0, min(100, int(round(score))))
 
     def _on_end_training(self):
         if self._current_reps > 0:
@@ -180,6 +201,9 @@ class TrainingView(BaseView):
         total_sets = len(self._sets)
         total_volume = sum(s["reps"] * s["weight"] for s in self._sets)
 
+        total_penalty = sum(s.get("penalty_points", 0.0) for s in self._sets)
+        calculated_score = self._calculate_score(total_reps, total_penalty, total_sets)
+
         # Pobieramy czas z panelu
         seconds = self.control_panel.elapsed_seconds
         duration_str = ControlPanelWidget.format_time(seconds)
@@ -188,12 +212,12 @@ class TrainingView(BaseView):
 
         add_training_entry(
             weight=total_volume, reps=total_reps, sets=total_sets,
-            duration=duration_str, score=80, to_fix_list=[], sets_detail=sets_detail
+            duration=duration_str, score=calculated_score, to_fix_list=[], sets_detail=sets_detail
         )
 
         self._sets.clear()
         self._current_reps = 0
-        self._current_errors = 0
+        self._current_errors = 0.0
         self.control_panel.reset_panel()
         self._analysis_worker.reset()
         self._last_error_play_time.clear()
@@ -201,7 +225,7 @@ class TrainingView(BaseView):
     def _on_reset_set(self):
         self._analysis_worker.reset()
         self._current_reps = 0
-        self._current_errors = 0
+        self._current_errors = 0.0
         self._active_errors.clear()
         self._last_error_play_time.clear()
 
