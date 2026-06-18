@@ -44,6 +44,9 @@ class TrainingView(BaseView):
         self._active_errors = set()
         self._last_error_play_time = {}
 
+        # Unikalne komunikaty błędów zebrane przez cały trening (do zapisu w to_fix)
+        self._training_error_messages: dict[str, str] = {}  # kod → komunikat
+
         self._create_widgets()
         self._setup_layout()
         self._connect_analysis()
@@ -139,6 +142,11 @@ class TrainingView(BaseView):
                 error_weight = ERROR_WEIGHTS.get(error_code, 1.0)
                 self._current_errors += error_weight
 
+                # Zbierz unikalny komunikat błędu (raz na kod przez cały trening)
+                error_obj = next((e for e in result.errors if e.code == error_code), None)
+                if error_obj and error_code not in self._training_error_messages:
+                    self._training_error_messages[error_code] = error_obj.message
+
         self._active_errors = current_error_codes
 
     def _on_rep_completed(self, reps: int):
@@ -210,9 +218,11 @@ class TrainingView(BaseView):
 
         sets_detail = [{"set_nr": s["set_nr"], "reps": s["reps"], "weight": s["weight"]} for s in self._sets]
 
+        to_fix_list = list(self._training_error_messages.values())
+
         add_training_entry(
             weight=total_volume, reps=total_reps, sets=total_sets,
-            duration=duration_str, score=calculated_score, to_fix_list=[], sets_detail=sets_detail
+            duration=duration_str, score=calculated_score, to_fix_list=to_fix_list, sets_detail=sets_detail
         )
 
         self._sets.clear()
@@ -221,6 +231,7 @@ class TrainingView(BaseView):
         self.control_panel.reset_panel()
         self._analysis_worker.reset()
         self._last_error_play_time.clear()
+        self._training_error_messages.clear()
 
     def _on_reset_set(self):
         self._analysis_worker.reset()
