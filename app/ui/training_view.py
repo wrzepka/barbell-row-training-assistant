@@ -141,7 +141,6 @@ class TrainingView(BaseView):
 
                 error_weight = ERROR_WEIGHTS.get(error_code, 1.0)
                 self._current_errors += error_weight
-
                 # Zbierz unikalny komunikat błędu (raz na kod przez cały trening)
                 error_obj = next((e for e in result.errors if e.code == error_code), None)
                 if error_obj and error_code not in self._training_error_messages:
@@ -222,6 +221,7 @@ class TrainingView(BaseView):
 
         add_training_entry(
             weight=total_volume, reps=total_reps, sets=total_sets,
+
             duration=duration_str, score=calculated_score, to_fix_list=to_fix_list, sets_detail=sets_detail
         )
 
